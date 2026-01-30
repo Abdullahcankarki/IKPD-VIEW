@@ -7,6 +7,7 @@ import {
   Col,
   Toast,
   ToastContainer,
+  Badge,
 } from "react-bootstrap";
 import {
   fetchAllePraxen,
@@ -162,62 +163,95 @@ const PraxisPage: React.FC = () => {
   });
 
   return (
-    <div className="p-3">
-      <h1>Praxen</h1>
-      <div className="d-flex mb-3 flex-wrap align-items-center gap-2">
-        <input
-          type="search"
-          className="form-control"
-          placeholder="Suchen..."
-          style={{ maxWidth: "300px" }}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          aria-label="Suche Praxen"
-        />
-        <Button variant="primary" onClick={() => handleOpenModal()}>
-          Neue Praxis
-        </Button>
+    <div className="ikpd-page">
+      <div className="ikpd-page-header">
+        <h2>Praxen</h2>
+        <div className="ikpd-page-actions">
+          <Form.Control
+            type="search"
+            className="ikpd-search-input"
+            placeholder="Suchen..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            aria-label="Suche Praxen"
+          />
+          <Button variant="primary" onClick={() => handleOpenModal()} title="Neue Praxis">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </Button>
+        </div>
       </div>
 
-
-      <Row xs={1} md={2} lg={3} className="g-4">
-        {loading ? (
-          <Col>
-            <div className="text-center w-100">Laden...</div>
-          </Col>
-        ) : filteredPraxen.length === 0 ? (
-          <Col>
-            <div className="text-center w-100">Keine Praxen gefunden</div>
-          </Col>
-        ) : (
-          filteredPraxen.map((praxis) => (
+      {loading ? (
+        <div className="ikpd-loading">
+          <div className="spinner-border text-primary" role="status" />
+          <div className="mt-2 text-muted">Praxen werden geladen...</div>
+        </div>
+      ) : filteredPraxen.length === 0 ? (
+        <div className="ikpd-empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <p>Keine Praxen gefunden</p>
+        </div>
+      ) : (
+        <Row xs={1} md={2} xl={3} className="g-4">
+          {filteredPraxen.map((praxis) => (
             <Col key={praxis._id}>
-              <div className="card h-100 shadow-sm border">
-                <div className="card-body">
-                  <h5 className="card-title">{praxis.name}</h5>
-                  <p className="mb-1"><strong>Adresse:</strong> {praxis.adresse}</p>
-                  <p className="mb-1"><strong>Telefon:</strong> {praxis.telefonnummer || "-"}</p>
-                  <p className="mb-1"><strong>Email:</strong> {praxis.email || "-"}</p>
-                  <p className="mb-1"><strong>IBAN:</strong> {praxis.iban || "-"}</p>
-                  <p className="mb-1"><strong>Bank:</strong> {praxis.bankname || "-"}</p>
-                  <p className="mb-1"><strong>BIC:</strong> {praxis.bic || "-"}</p>
-                  <p className="mb-2"><strong>Therapeuten:</strong> {praxis.therapeuten.map(t => `${t.vorname} ${t.nachname}`).join(", ") || "-"}</p>
-                  <div className="d-flex justify-content-end gap-2">
-                    <Button size="sm" variant="outline-secondary" onClick={() => handleOpenModal(praxis)}>
-                      Bearbeiten
-                    </Button>
-                    <Button size="sm" variant="outline-danger" onClick={() => confirmDelete(praxis._id)}>
-                      Löschen
-                    </Button>
+              <div className="ikpd-praxis-card">
+                <div className="ikpd-praxis-card-header">
+                  <div className="ikpd-praxis-card-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
                   </div>
+                  <div>
+                    <h5 className="ikpd-praxis-card-title">{praxis.name}</h5>
+                    <span className="ikpd-praxis-card-address">{praxis.adresse}</span>
+                  </div>
+                </div>
+                <div className="ikpd-praxis-card-body">
+                  <div className="ikpd-praxis-detail">
+                    <span className="ikpd-praxis-detail-label">Telefon</span>
+                    <span className="ikpd-praxis-detail-value">{praxis.telefonnummer || "–"}</span>
+                  </div>
+                  <div className="ikpd-praxis-detail">
+                    <span className="ikpd-praxis-detail-label">E-Mail</span>
+                    <span className="ikpd-praxis-detail-value">{praxis.email || "–"}</span>
+                  </div>
+                  <div className="ikpd-praxis-detail">
+                    <span className="ikpd-praxis-detail-label">IBAN</span>
+                    <span className="ikpd-praxis-detail-value" style={{ fontFamily: "monospace", fontSize: "0.85rem" }}>{praxis.iban || "–"}</span>
+                  </div>
+                  <div className="ikpd-praxis-detail">
+                    <span className="ikpd-praxis-detail-label">Bank / BIC</span>
+                    <span className="ikpd-praxis-detail-value">{praxis.bankname || "–"}{praxis.bic ? ` (${praxis.bic})` : ""}</span>
+                  </div>
+                  {praxis.therapeuten.length > 0 && (
+                    <div className="ikpd-praxis-detail">
+                      <span className="ikpd-praxis-detail-label">Therapeuten</span>
+                      <div className="d-flex flex-wrap gap-1 mt-1">
+                        {praxis.therapeuten.map(t => (
+                          <Badge key={t._id} bg="light" text="dark" className="fw-normal">{t.vorname} {t.nachname}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="ikpd-praxis-card-actions">
+                  <Button size="sm" variant="outline-primary" onClick={() => handleOpenModal(praxis)} title="Bearbeiten">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                  </Button>
+                  <Button size="sm" variant="outline-danger" onClick={() => confirmDelete(praxis._id)} title="Löschen">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                  </Button>
                 </div>
               </div>
             </Col>
-          ))
-        )}
-      </Row>
+          ))}
+        </Row>
+      )}
 
-      <Modal show={showModal} onHide={handleCloseModal} size="lg" centered>
+      <Modal show={showModal} onHide={handleCloseModal} size="lg" centered backdrop="static">
         <Modal.Header closeButton>
           <Modal.Title>
             {editPraxis ? "Praxis bearbeiten" : "Neue Praxis"}
@@ -344,11 +378,11 @@ const PraxisPage: React.FC = () => {
             </Row>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseModal}>
-              Abbrechen
+            <Button variant="secondary" onClick={handleCloseModal} title="Abbrechen">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </Button>
-            <Button type="submit" variant="primary">
-              Speichern
+            <Button type="submit" variant="primary" title="Speichern">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </Button>
           </Modal.Footer>
         </Form>
@@ -358,6 +392,7 @@ const PraxisPage: React.FC = () => {
         show={showDeleteModal}
         onHide={() => setShowDeleteModal(false)}
         centered
+        backdrop="static"
       >
         <Modal.Header closeButton>
           <Modal.Title>Löschen bestätigen</Modal.Title>
@@ -366,11 +401,11 @@ const PraxisPage: React.FC = () => {
           Möchten Sie diese Praxis wirklich löschen?
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Abbrechen
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} title="Abbrechen">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </Button>
-          <Button variant="danger" onClick={handleDelete}>
-            Löschen
+          <Button variant="danger" onClick={handleDelete} title="Löschen">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
           </Button>
         </Modal.Footer>
       </Modal>

@@ -39,6 +39,7 @@ export interface TherapeutResource {
   email: string;
   telefonnummer?: string;
   rolle: 'admin' | 'therapeut';
+  qualifikation?: string;
   praxisId: string;
   stundensatz: number;
   anfang?: string;

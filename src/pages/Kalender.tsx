@@ -1,4 +1,4 @@
-import { Modal, Button, Form } from 'react-bootstrap';
+import { Modal, Button, Form, Badge } from 'react-bootstrap';
 import { fetchAlleKlienten, createTermin } from '../services/api';
 import { Calendar, Views, dateFnsLocalizer, Event, View } from 'react-big-calendar';
 import { format } from 'date-fns/format';
@@ -23,9 +23,15 @@ const localizer = dateFnsLocalizer({
 });
 
 const statusColors: Record<string, string> = {
-    geplant: '#0d6efd',
-    abgeschlossen: '#198754',
-    abgesagt: '#dc3545',
+    geplant: 'var(--ikpd-primary)',
+    abgeschlossen: '#059669',
+    abgesagt: '#dc2626',
+};
+
+const statusLabels: Record<string, string> = {
+    geplant: 'Geplant',
+    abgeschlossen: 'Abgeschlossen',
+    abgesagt: 'Abgesagt',
 };
 
 const Kalender = () => {
@@ -39,6 +45,7 @@ const Kalender = () => {
     const [klienten, setKlienten] = useState<any[]>([]);
 
     const [currentView, setCurrentView] = useState<View>(Views.MONTH);
+    const [currentDate, setCurrentDate] = useState(new Date());
 
     const [errorMessage, setErrorMessage] = useState('');
 
@@ -73,9 +80,24 @@ const Kalender = () => {
     }, []);
 
     return (
-        <div className="container mt-4" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-            <h2 className="mb-4">Meine Termine</h2>
-            <div style={{ flex: 1, minHeight: 0 }}>
+        <div className="ikpd-page ikpd-kalender-page">
+            <div className="ikpd-page-header">
+                <h2>Meine Termine</h2>
+                <div className="ikpd-page-actions">
+                    <div className="ikpd-kalender-legend">
+                        {Object.entries(statusLabels).map(([key, label]) => (
+                            <Badge
+                                key={key}
+                                style={{ backgroundColor: statusColors[key] }}
+                                className="me-1"
+                            >
+                                {label}
+                            </Badge>
+                        ))}
+                    </div>
+                </div>
+            </div>
+            <div className="ikpd-kalender-wrapper">
                 <Calendar
                     localizer={localizer}
                     culture="de"
@@ -96,12 +118,21 @@ const Kalender = () => {
                     events={events}
                     startAccessor="start"
                     endAccessor="end"
-                    style={{ height: '80vh', minHeight: 400 }}
+                    style={{ height: '100%', minHeight: 500 }}
                     eventPropGetter={(event: any) => {
-                        const color = statusColors[event.status] || '#6c757d';
-                        return { style: { backgroundColor: color, color: 'white' } };
+                        const color = statusColors[event.status] || '#64748b';
+                        return {
+                            style: {
+                                backgroundColor: color,
+                                color: 'white',
+                                borderRadius: '6px',
+                                border: 'none',
+                                padding: '2px 6px',
+                                fontSize: '0.8rem',
+                                fontWeight: 500,
+                            },
+                        };
                     }}
-                    defaultView={Views.MONTH}
                     views={[Views.MONTH, Views.WEEK, Views.DAY]}
                     selectable
                     onSelectSlot={(slotInfo) => {
@@ -109,25 +140,26 @@ const Kalender = () => {
                         setShowModal(true);
                         setErrorMessage('');
                     }}
-                    slotPropGetter={() => ({
-                        style: {
-                            backgroundColor: '#f8f9fa',
-                        },
-                    })}
                     view={currentView}
                     onView={(view) => setCurrentView(view)}
+                    date={currentDate}
+                    onNavigate={(date) => setCurrentDate(date)}
                 />
-                <Modal show={showModal} onHide={() => setShowModal(false)}>
+                <Modal show={showModal} onHide={() => setShowModal(false)} centered backdrop="static">
                     <Modal.Header closeButton>
                         <Modal.Title>Neuen Termin erstellen</Modal.Title>
                     </Modal.Header>
                     <Modal.Body>
                         {selectedSlot && (
-                            <>
-                                <div className="mb-3">
-                                    <strong>Startzeit:</strong>{' '}
-                                    {moment(selectedSlot.start).tz('Europe/Berlin').locale('de').format('dddd, DD. MMMM YYYY, HH:mm')}
-                                </div>
+                            <div className="ikpd-termin-slot-info mb-3">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="me-2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                                </svg>
+                                {moment(selectedSlot.start).tz('Europe/Berlin').locale('de').format('dddd, DD. MMMM YYYY, HH:mm')}
+                            </div>
+                        )}
+                        <Form>
+                            {selectedSlot && (
                                 <Form.Group className="mb-3">
                                     <Form.Label>Startzeit bearbeiten</Form.Label>
                                     <Form.Control
@@ -141,9 +173,7 @@ const Kalender = () => {
                                         }}
                                     />
                                 </Form.Group>
-                            </>
-                        )}
-                        <Form>
+                            )}
                             <Form.Group className="mb-3">
                                 <Form.Label>Klient</Form.Label>
                                 <Form.Select value={klientId} onChange={(e: any) => setKlientId(e.target.value)}>
@@ -173,15 +203,18 @@ const Kalender = () => {
                             </Form.Group>
                         </Form>
                         {errorMessage && (
-                            <div className="alert alert-danger" role="alert">
+                            <div className="alert alert-danger py-2" role="alert">
                                 {errorMessage}
                             </div>
                         )}
                     </Modal.Body>
                     <Modal.Footer>
-                        <Button variant="secondary" onClick={() => setShowModal(false)}>Schließen</Button>
+                        <Button variant="secondary" onClick={() => setShowModal(false)} title="Abbrechen">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </Button>
                         <Button
                             variant="primary"
+                            title="Termin speichern"
                             onClick={async () => {
                                 if (!selectedSlot || !klientId) {
                                     setErrorMessage('Bitte wählen Sie einen Klienten.');
@@ -195,14 +228,24 @@ const Kalender = () => {
                                         klientId,
                                     });
                                     setShowModal(false);
-                                    window.location.reload(); // einfachste Möglichkeit zum Aktualisieren
+                                    setBeschreibung('');
+                                    setDauer(30);
+                                    setKlientId('');
+                                    const termine = await fetchMeineTermine();
+                                    const mapped = termine.map((t: any) => ({
+                                        title: t.klientName + ' (' + t.status + ')',
+                                        start: new Date(t.datum),
+                                        end: new Date(new Date(t.datum).getTime() + t.dauer * 60000),
+                                        status: t.status,
+                                    }));
+                                    setEvents(mapped);
                                 } catch (err) {
                                     setErrorMessage('Der Termin konnte nicht erstellt werden. Bitte überprüfe deine Eingaben.');
                                     console.error(err);
                                 }
                             }}
                         >
-                            Termin speichern
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><path d="m9 16 2 2 4-4"/></svg>
                         </Button>
                     </Modal.Footer>
                 </Modal>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Button, Modal, Form, Table, Toast, Row, Col, InputGroup, FormControl } from "react-bootstrap";
-import {fetchAlleTherapeuten, createTherapeut, updateTherapeut, deleteTherapeut } from "../services/api";
-import { TherapeutResource } from "../Resources";
+import { Button, Modal, Form, Toast, Row, Col, Badge } from "react-bootstrap";
+import {fetchAlleTherapeuten, createTherapeut, updateTherapeut, deleteTherapeut, fetchAllePraxen } from "../services/api";
+import { TherapeutResource, PraxisResource } from "../Resources";
 
 const initialTherapeut: TherapeutResource = {
   _id: "",
@@ -11,6 +11,7 @@ const initialTherapeut: TherapeutResource = {
   telefonnummer: "",
   username: "",
   rolle: "therapeut",
+  qualifikation: "",
   praxisId: "",
   stundensatz: 0,
   anfang: "",
@@ -28,9 +29,12 @@ const TherapeutenPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [therapeutToDelete, setTherapeutToDelete] = useState<TherapeutResource | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [praxen, setPraxen] = useState<PraxisResource[]>([]);
 
   useEffect(() => {
     loadTherapeuten();
+    loadPraxen();
   }, []);
 
   const loadTherapeuten = async () => {
@@ -41,6 +45,15 @@ const TherapeutenPage: React.FC = () => {
       showToastMessage("Fehler beim Laden der Therapeuten.");
     }
   };
+
+  const loadPraxen = async () => {
+    try {
+      const data = await fetchAllePraxen();
+      setPraxen(data);
+    } catch { /* ignore */ }
+  };
+
+  const getPraxisName = (id: string) => praxen.find(p => p._id === id)?.name || '–';
 
   const handleShowModal = (therapeut?: TherapeutResource) => {
     if (therapeut) {
@@ -122,58 +135,109 @@ const TherapeutenPage: React.FC = () => {
   );
 
   return (
-    <div className="container mt-4">
-      <h2>Therapeuten</h2>
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <InputGroup style={{ maxWidth: "300px" }}>
-          <FormControl
+    <div className="ikpd-page">
+      <div className="ikpd-page-header">
+        <h2>Therapeuten</h2>
+        <div className="ikpd-page-actions">
+          <Form.Control
+            type="text"
+            className="ikpd-search-input"
             placeholder="Suche"
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
-        </InputGroup>
-        <Button variant="primary" onClick={() => handleShowModal()}>
-          Neuer Therapeut
-        </Button>
+          <Button variant="primary" onClick={() => handleShowModal()} title="Neuer Therapeut">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </Button>
+        </div>
       </div>
-      <Table striped bordered hover responsive>
-        <thead>
-          <tr>
-            <th>Vorname</th>
-            <th>Nachname</th>
-            <th>Email</th>
-            <th>Rolle</th>
-            <th>Praxis ID</th>
-            <th>Stundensatz</th>
-            <th>Aktionen</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredTherapeuten.length === 0 && (
-            <tr>
-              <td colSpan={7} className="text-center">Keine Therapeuten gefunden.</td>
-            </tr>
-          )}
-          {filteredTherapeuten.map(t => (
-            <tr key={t._id}>
-              <td>{t.vorname}</td>
-              <td>{t.nachname}</td>
-              <td>{t.email}</td>
-              <td>{t.rolle}</td>
-              <td>{t.praxisId}</td>
-              <td>{t.stundensatz}</td>
-              <td>
-                <Button variant="outline-secondary" size="sm" onClick={() => handleShowModal(t)} className="me-2">
-                  Bearbeiten
-                </Button>
-                <Button variant="outline-danger" size="sm" onClick={() => confirmDelete(t)}>
-                  Löschen
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </Table>
+      {filteredTherapeuten.length > 0 && (
+        <div className="ikpd-list-count mb-2">{filteredTherapeuten.length} Therapeuten</div>
+      )}
+
+      {filteredTherapeuten.length === 0 ? (
+        <div className="ikpd-empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <p>Keine Therapeuten gefunden</p>
+        </div>
+      ) : (
+        <div className="ikpd-list">
+          {filteredTherapeuten.map(t => {
+            const initials = (t.vorname?.[0] || '').toUpperCase() + (t.nachname?.[0] || '').toUpperCase();
+            const isExpanded = expandedId === t._id;
+            return (
+              <div key={t._id} className={`ikpd-list-item${isExpanded ? ' expanded' : ''}`}>
+                <div className="ikpd-list-item-row" onClick={() => setExpandedId(isExpanded ? null : t._id)}>
+                  <div className={`ikpd-list-item-avatar${t.rolle === 'admin' ? ' purple' : ''}`}>{initials}</div>
+                  <div className="ikpd-list-item-content">
+                    <div className="ikpd-list-item-primary">
+                      <span className="ikpd-list-item-name">{t.vorname} {t.nachname}</span>
+                      <Badge bg={t.rolle === 'admin' ? 'primary' : 'secondary'}>{t.rolle}</Badge>
+                    </div>
+                    <div className="ikpd-list-item-secondary">
+                      <span className="ikpd-list-item-meta">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                        {t.email}
+                      </span>
+                      <span className="ikpd-list-item-meta">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        {t.stundensatz} €/h
+                      </span>
+                    </div>
+                  </div>
+                  <div className="ikpd-list-item-actions" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="outline-primary" size="sm" onClick={() => handleShowModal(t)} title="Bearbeiten">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                    </Button>
+                    <Button variant="outline-danger" size="sm" onClick={() => confirmDelete(t)} title="Löschen">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    </Button>
+                  </div>
+                  <button className="ikpd-list-item-expand" aria-label="Details anzeigen">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div className="ikpd-list-item-details">
+                  <div className="ikpd-list-item-details-inner">
+                    <div className="ikpd-detail-field">
+                      <span className="ikpd-detail-label">Username</span>
+                      <span className="ikpd-detail-value">{t.username}</span>
+                    </div>
+                    <div className="ikpd-detail-field">
+                      <span className="ikpd-detail-label">Telefon</span>
+                      <span className="ikpd-detail-value">{t.telefonnummer || '–'}</span>
+                    </div>
+                    <div className="ikpd-detail-field">
+                      <span className="ikpd-detail-label">Praxis</span>
+                      <span className="ikpd-detail-value">{getPraxisName(t.praxisId)}</span>
+                    </div>
+                    <div className="ikpd-detail-field">
+                      <span className="ikpd-detail-label">Qualifikation</span>
+                      <span className="ikpd-detail-value">{t.qualifikation || '–'}</span>
+                    </div>
+                    <div className="ikpd-detail-field">
+                      <span className="ikpd-detail-label">Stundensatz</span>
+                      <span className="ikpd-detail-value">{t.stundensatz} €</span>
+                    </div>
+                    <div className="ikpd-detail-field">
+                      <span className="ikpd-detail-label">Wochenstunden</span>
+                      <span className="ikpd-detail-value">{t.wochenstunden}h</span>
+                    </div>
+                    <div className="ikpd-detail-field">
+                      <span className="ikpd-detail-label">Anfang</span>
+                      <span className="ikpd-detail-value">{t.anfang?.slice(0, 10) || '–'}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <Modal show={showModal} onHide={handleCloseModal} backdrop="static" keyboard={false} size="lg">
         <Modal.Header closeButton>
@@ -245,6 +309,16 @@ const TherapeutenPage: React.FC = () => {
                   </Form.Select>
                   <Form.Control.Feedback type="invalid">Bitte Rolle auswählen.</Form.Control.Feedback>
                 </Form.Group>
+                <Form.Group className="mb-3" controlId="qualifikation">
+                  <Form.Label>Qualifikation</Form.Label>
+                  <Form.Control
+                    type="text"
+                    placeholder="z.B. Psychologe, Heilpraktiker"
+                    name="qualifikation"
+                    value={currentTherapeut.qualifikation || ""}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
                 <Form.Group className="mb-3" controlId="username">
                   <Form.Label>Username</Form.Label>
                   <Form.Control
@@ -258,16 +332,19 @@ const TherapeutenPage: React.FC = () => {
                   <Form.Control.Feedback type="invalid">Bitte Username eingeben.</Form.Control.Feedback>
                 </Form.Group>
                 <Form.Group className="mb-3" controlId="praxisId">
-                  <Form.Label>Praxis ID</Form.Label>
-                  <Form.Control
+                  <Form.Label>Praxis</Form.Label>
+                  <Form.Select
                     required
-                    type="text"
-                    placeholder="Praxis ID"
                     name="praxisId"
                     value={currentTherapeut.praxisId}
                     onChange={handleChange}
-                  />
-                  <Form.Control.Feedback type="invalid">Bitte Praxis ID eingeben.</Form.Control.Feedback>
+                  >
+                    <option value="">Bitte wählen</option>
+                    {praxen.map(p => (
+                      <option key={p._id} value={p._id}>{p.name}</option>
+                    ))}
+                  </Form.Select>
+                  <Form.Control.Feedback type="invalid">Bitte Praxis auswählen.</Form.Control.Feedback>
                 </Form.Group>
                 <Form.Group className="mb-3" controlId="stundensatz">
                   <Form.Label>Stundensatz</Form.Label>
@@ -325,11 +402,11 @@ const TherapeutenPage: React.FC = () => {
             </Row>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseModal}>
-              Abbrechen
+            <Button variant="secondary" onClick={handleCloseModal} title="Abbrechen">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </Button>
-            <Button variant="primary" type="submit">
-              {isEditing ? "Speichern" : "Erstellen"}
+            <Button variant="primary" type="submit" title={isEditing ? "Speichern" : "Erstellen"}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </Button>
           </Modal.Footer>
         </Form>
@@ -343,11 +420,11 @@ const TherapeutenPage: React.FC = () => {
           Möchten Sie diesen Therapeuten wirklich löschen?
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>
-            Abbrechen
+          <Button variant="secondary" onClick={() => setShowConfirmModal(false)} title="Abbrechen">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </Button>
-          <Button variant="danger" onClick={handleDelete}>
-            Löschen
+          <Button variant="danger" onClick={handleDelete} title="Löschen">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
           </Button>
         </Modal.Footer>
       </Modal>

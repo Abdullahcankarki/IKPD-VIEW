@@ -1,4 +1,4 @@
-import { AuftraggeberResource, KlientResource, TerminResource, TherapeutResource, PraxisResource } from "../Resources";
+import { AuftraggeberResource, KlientResource, TerminResource, TherapeutResource, PraxisResource, RechnungResource } from "../Resources";
 
 const API_URL = process.env.REACT_APP_API_SERVER_URL || "";
 
@@ -51,15 +51,14 @@ interface CreateTerminPayload {
   dauer: number;
   beschreibung?: string;
   klientId: string;
+  status?: 'geplant' | 'abgeschlossen' | 'abgesagt';
 }
 
 export async function createTermin(terminData: CreateTerminPayload): Promise<any> {
-  const response = await fetch(`${API_URL}/api/termin/`, {
+  const response = await fetch(`${API_URL}/api/termine/`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(terminData),
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ status: 'geplant', ...terminData }),
   });
 
   if (!response.ok) {
@@ -296,6 +295,107 @@ export async function updatePraxis(praxis: Partial<PraxisResource>, id: string):
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message || 'Praxis konnte nicht aktualisiert werden');
+  }
+  return await response.json();
+}
+
+// Rechnungen-API-Funktionen
+export async function fetchAlleRechnungen(): Promise<RechnungResource[]> {
+  const response = await fetch(`${API_URL}/api/rechnungen/`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Rechnungen konnten nicht geladen werden');
+  }
+  return await response.json();
+}
+
+export async function fetchRechnung(id: string): Promise<RechnungResource> {
+  const response = await fetch(`${API_URL}/api/rechnungen/${id}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Rechnung konnte nicht geladen werden');
+  }
+  return await response.json();
+}
+
+export async function createRechnung(data: {
+  monat: number;
+  jahr: number;
+  klientId: string;
+  artDerMassnahme: string;
+  umsatzsteuer?: number;
+  rechnungsnummer?: string;
+  therapeutId?: string;
+}): Promise<RechnungResource> {
+  const response = await fetch(`${API_URL}/api/rechnungen/`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Rechnung konnte nicht erstellt werden');
+  }
+  return await response.json();
+}
+
+export async function deleteRechnung(id: string): Promise<any> {
+  const response = await fetch(`${API_URL}/api/rechnungen/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Rechnung konnte nicht gelöscht werden');
+  }
+  return await response.json();
+}
+
+export function getRechnungPdfUrl(id: string): string {
+  return `${API_URL}/api/rechnungen/${id}/pdf`;
+}
+
+// Profil-API-Funktionen
+export async function fetchMeinProfil(): Promise<TherapeutResource> {
+  const response = await fetch(`${API_URL}/api/therapeut/me`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Profil konnte nicht geladen werden');
+  }
+  return await response.json();
+}
+
+export async function updateMeinProfil(data: Partial<TherapeutResource>): Promise<TherapeutResource> {
+  const response = await fetch(`${API_URL}/api/therapeut/me`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Profil konnte nicht aktualisiert werden');
+  }
+  return await response.json();
+}
+
+export async function updateMeinPasswort(oldPassword: string, newPassword: string): Promise<any> {
+  const response = await fetch(`${API_URL}/api/therapeut/me/password`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ oldPassword, newPassword }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Passwort konnte nicht geändert werden');
   }
   return await response.json();
 }

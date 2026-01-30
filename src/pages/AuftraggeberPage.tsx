@@ -3,11 +3,11 @@ import {
   Button,
   Modal,
   Form,
-  Table,
   Toast,
   Alert,
   Row,
   Col,
+  Badge,
 } from 'react-bootstrap';
 
 import {
@@ -15,7 +15,9 @@ import {
   createAuftraggeber,
   updateAuftraggeber,
   deleteAuftraggeber,
+  fetchAllePraxen,
 } from '../services/api';
+import { PraxisResource } from '../Resources';
 
 
 export interface AuftraggeberResource {
@@ -49,6 +51,8 @@ const AuftraggeberComponent = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [toasts, setToasts] = useState<{ id: string; title: string; message: string }[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [praxen, setPraxen] = useState<PraxisResource[]>([]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'institution' | 'email' | ''>('');
@@ -59,6 +63,18 @@ const AuftraggeberComponent = () => {
       setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 100);
     }
   }, [showModal]);
+
+  useEffect(() => {
+    const loadPraxen = async () => {
+      try {
+        const data = await fetchAllePraxen();
+        setPraxen(data);
+      } catch { /* ignore */ }
+    };
+    loadPraxen();
+  }, []);
+
+  const getPraxisName = (id: string) => praxen.find(p => p._id === id)?.name || '–';
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -95,7 +111,7 @@ const AuftraggeberComponent = () => {
     if (!formData.funktion) errors.funktion = 'Funktion ist erforderlich';
     if (!formData.adresse) errors.adresse = 'Adresse ist erforderlich';
     if (!formData.email) errors.email = 'E-Mail ist erforderlich';
-    if (!formData.praxisId) errors.praxisId = 'Praxis-ID ist erforderlich';
+    if (!formData.praxisId) errors.praxisId = 'Praxis ist erforderlich';
 
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
@@ -171,86 +187,106 @@ const AuftraggeberComponent = () => {
   };
 
   return (
-    <div className="container py-5">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2 className="fw-bold mb-0">Auftraggeber</h2>
-        <div className="d-flex gap-2" style={{ maxWidth: '480px', width: '100%' }}>
+    <div className="ikpd-page">
+      <div className="ikpd-page-header">
+        <h2>Auftraggeber</h2>
+        <div className="ikpd-page-actions">
           <Form.Control
             type="text"
+            className="ikpd-search-input"
             placeholder="Suche"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <Button variant="primary" onClick={handleCreate}>
-            Hinzufügen
+          <Button variant="primary" onClick={handleCreate} title="Hinzufügen">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </Button>
         </div>
       </div>
 
-      <div className="table-responsive shadow-sm border rounded">
-        <Table className="align-middle mb-0 table-hover" responsive>
-          <thead className="bg-light position-sticky top-0 z-1">
-            <tr className="border-bottom">
-              <th
-                className="fw-semibold text-uppercase small"
-                role="button"
-                onClick={() => handleSort('name')}
-              >
-                Name {sortBy === 'name' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
-              </th>
-              <th
-                className="fw-semibold text-uppercase small"
-                role="button"
-                onClick={() => handleSort('institution')}
-              >
-                Institution {sortBy === 'institution' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
-              </th>
-              <th className="fw-semibold text-uppercase small">Funktion</th>
-              <th className="fw-semibold text-uppercase small">Adresse</th>
-              <th className="fw-semibold text-uppercase small">Telefon</th>
-              <th
-                className="fw-semibold text-uppercase small"
-                role="button"
-                onClick={() => handleSort('email')}
-              >
-                Email {sortBy === 'email' ? (sortOrder === 'asc' ? '↑' : '↓') : ''}
-              </th>
-              <th className="fw-semibold text-uppercase small">Praxis-ID</th>
-              <th className="fw-semibold text-uppercase small text-end">Aktionen</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredData.length === 0 ? (
-              <tr>
-                <td colSpan={8} className="text-center py-4 text-muted">
-                  <i className="ci-search opacity-50 me-2"></i>
-                  Keine passenden Auftraggeber gefunden.
-                </td>
-              </tr>
-            ) : (
-              filteredData.map((a) => (
-                <tr key={a._id} className="border-bottom">
-                  <td>{a.name}</td>
-                  <td>{a.institution}</td>
-                  <td>{a.funktion}</td>
-                  <td>{a.adresse}</td>
-                  <td>{a.telefonnummer}</td>
-                  <td>{a.email}</td>
-                  <td>{a.praxisId}</td>
-                  <td className="text-end">
-                    <Button variant="outline-secondary" size="sm" onClick={() => handleEdit(a)} className="me-2">
-                      <i className="ci-edit me-1"></i> Bearbeiten
+      {filteredData.length > 0 && (
+        <div className="ikpd-list-count mb-2">{filteredData.length} Auftraggeber</div>
+      )}
+
+      {filteredData.length === 0 ? (
+        <div className="ikpd-empty-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <p>Keine passenden Auftraggeber gefunden</p>
+        </div>
+      ) : (
+        <div className="ikpd-list">
+          {filteredData.map((a) => {
+            const initials = a.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+            const isExpanded = expandedId === a._id;
+            return (
+              <div key={a._id} className={`ikpd-list-item${isExpanded ? ' expanded' : ''}`}>
+                <div className="ikpd-list-item-row" onClick={() => setExpandedId(isExpanded ? null : a._id)}>
+                  <div className="ikpd-list-item-avatar blue">{initials}</div>
+                  <div className="ikpd-list-item-content">
+                    <div className="ikpd-list-item-primary">
+                      <span className="ikpd-list-item-name">{a.name}</span>
+                      <Badge bg="light" text="dark" className="fw-normal">{a.institution}</Badge>
+                    </div>
+                    <div className="ikpd-list-item-secondary">
+                      <span className="ikpd-list-item-meta">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                        {a.email}
+                      </span>
+                      <span className="ikpd-list-item-meta">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                        {a.funktion}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="ikpd-list-item-actions" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="outline-primary" size="sm" onClick={() => handleEdit(a)} title="Bearbeiten">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                     </Button>
-                    <Button variant="outline-danger" size="sm" onClick={() => handleDelete(a._id)}>
-                      <i className="ci-trash me-1"></i> Löschen
+                    <Button variant="outline-danger" size="sm" onClick={() => handleDelete(a._id)} title="Löschen">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                     </Button>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </Table>
-      </div>
+                  </div>
+                  <button className="ikpd-list-item-expand" aria-label="Details anzeigen">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </button>
+                </div>
+                <div className="ikpd-list-item-details">
+                  <div className="ikpd-list-item-details-inner">
+                    <div className="ikpd-detail-field">
+                      <span className="ikpd-detail-label">Institution</span>
+                      <span className="ikpd-detail-value">{a.institution}</span>
+                    </div>
+                    <div className="ikpd-detail-field">
+                      <span className="ikpd-detail-label">Funktion</span>
+                      <span className="ikpd-detail-value">{a.funktion}</span>
+                    </div>
+                    <div className="ikpd-detail-field">
+                      <span className="ikpd-detail-label">Adresse</span>
+                      <span className="ikpd-detail-value">{a.adresse}</span>
+                    </div>
+                    <div className="ikpd-detail-field">
+                      <span className="ikpd-detail-label">Telefon</span>
+                      <span className="ikpd-detail-value">{a.telefonnummer || '–'}</span>
+                    </div>
+                    <div className="ikpd-detail-field">
+                      <span className="ikpd-detail-label">E-Mail</span>
+                      <span className="ikpd-detail-value">{a.email}</span>
+                    </div>
+                    <div className="ikpd-detail-field">
+                      <span className="ikpd-detail-label">Praxis</span>
+                      <span className="ikpd-detail-value">{getPraxisName(a.praxisId)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <Modal show={showModal} onHide={() => setShowModal(false)} backdrop="static" centered size="lg">
         <Modal.Header closeButton>
@@ -324,13 +360,18 @@ const AuftraggeberComponent = () => {
                     <Form.Control.Feedback type="invalid">{formErrors.email}</Form.Control.Feedback>
                   </Form.Group>
                   <Form.Group className="mb-3">
-                    <Form.Label>Praxis-ID</Form.Label>
-                    <Form.Control
+                    <Form.Label>Praxis</Form.Label>
+                    <Form.Select
                       name="praxisId"
                       value={formData.praxisId}
-                      onChange={handleChange}
+                      onChange={handleChange as any}
                       isInvalid={!!formErrors.praxisId}
-                    />
+                    >
+                      <option value="">Bitte wählen</option>
+                      {praxen.map(p => (
+                        <option key={p._id} value={p._id}>{p.name}</option>
+                      ))}
+                    </Form.Select>
                     <Form.Control.Feedback type="invalid">{formErrors.praxisId}</Form.Control.Feedback>
                   </Form.Group>
                 </div>
@@ -339,11 +380,11 @@ const AuftraggeberComponent = () => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Abbrechen
+          <Button variant="secondary" onClick={() => setShowModal(false)} title="Abbrechen">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </Button>
-          <Button variant="primary" onClick={handleSubmit}>
-            {isEditing ? 'Speichern' : 'Erstellen'}
+          <Button variant="primary" onClick={handleSubmit} title={isEditing ? 'Speichern' : 'Erstellen'}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </Button>
         </Modal.Footer>
       </Modal>
@@ -356,11 +397,11 @@ const AuftraggeberComponent = () => {
           Möchten Sie diesen Auftraggeber wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Abbrechen
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} title="Abbrechen">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </Button>
-          <Button variant="danger" onClick={confirmDelete}>
-            Löschen
+          <Button variant="danger" onClick={confirmDelete} title="Löschen">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
           </Button>
         </Modal.Footer>
       </Modal>
