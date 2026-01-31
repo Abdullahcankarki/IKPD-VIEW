@@ -1,4 +1,4 @@
-import React, { JSX, useState } from 'react';
+import React, { JSX, useState, useEffect } from 'react';
 import './App.css';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Link, useNavigate } from 'react-router-dom';
@@ -75,11 +75,28 @@ const IconLogout = () => (
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
   </svg>
 );
-const IconMenu = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+const IconMore = () => (
+  <svg className="ikpd-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" />
   </svg>
 );
+const IconProfile = () => (
+  <svg className="ikpd-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="8" r="5" /><path d="M20 21a8 8 0 1 0-16 0" />
+  </svg>
+);
+
+const MOBILE_BREAKPOINT = 1024;
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth <= MOBILE_BREAKPOINT);
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return isMobile;
+}
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: IconDashboard, section: 'Übersicht' },
@@ -91,104 +108,157 @@ const navItems = [
   { path: '/praxis', label: 'Praxis', icon: IconBuilding },
 ];
 
+/* Bottom bar: show first 4 items as tabs, rest in "More" popup */
+const bottomBarItems = navItems.slice(0, 4);
+const bottomBarMoreItems = navItems.slice(4);
+
 const Sidebar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   if (location.pathname === '/login') return null;
 
   const rolleLabel = user?.rolle === 'admin' ? 'Administrator' : 'Therapeut';
   const initials = user?.rolle === 'admin' ? 'AD' : 'TH';
 
-  const closeMobile = () => setMobileOpen(false);
+  const closeMore = () => setMoreOpen(false);
+  const isMoreActive = bottomBarMoreItems.some(i => location.pathname === i.path)
+    || location.pathname === '/profil';
 
-  return (
-    <>
-      {/* Mobile top bar */}
-      <div className="ikpd-topbar">
-        <Link to="/" className="ikpd-topbar-brand">
-          <img src={logo} alt="IKPD" />
-          <span>IKPD</span>
-        </Link>
-        <button className="ikpd-hamburger" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Menü">
-          <IconMenu />
-        </button>
-      </div>
+  /* ---- MOBILE: topbar + bottom tabs ---- */
+  if (isMobile) {
+    return (
+      <>
+        <div className="ikpd-topbar">
+          <Link to="/" className="ikpd-topbar-brand">
+            <img src={logo} alt="IKPD" />
+            <span>IKPD</span>
+          </Link>
+        </div>
 
-      {/* Overlay */}
-      <div
-        className={`ikpd-sidebar-overlay${mobileOpen ? ' open' : ''}`}
-        onClick={closeMobile}
-      />
-
-      {/* Sidebar */}
-      <aside className={`ikpd-sidebar${mobileOpen ? ' open' : ''}`}>
-        <Link to="/" className="ikpd-sidebar-brand" onClick={closeMobile}>
-          <img src={logo} alt="IKPD Logo" />
-          <div className="ikpd-sidebar-brand-text">
-            IKPD
-            <small>Praxisverwaltung</small>
-          </div>
-        </Link>
-
-        <nav className="ikpd-sidebar-nav">
-          {navItems.map((item) => (
-            <React.Fragment key={item.path}>
-              {item.section && (
-                <div className="ikpd-sidebar-section">{item.section}</div>
-              )}
+        <div className={`ikpd-bottombar-overlay${moreOpen ? ' open' : ''}`} onClick={closeMore} />
+        <nav className="ikpd-bottombar">
+          <div className="ikpd-bottombar-inner">
+            {bottomBarItems.map((item) => (
               <Link
+                key={item.path}
                 to={item.path}
-                className={`ikpd-sidebar-link${location.pathname === item.path ? ' active' : ''}`}
-                onClick={closeMobile}
+                className={`ikpd-bottombar-link${location.pathname === item.path ? ' active' : ''}`}
               >
                 <item.icon />
                 {item.label}
               </Link>
-            </React.Fragment>
-          ))}
+            ))}
+            <button
+              className={`ikpd-bottombar-more${isMoreActive ? ' active' : ''}`}
+              onClick={() => setMoreOpen(!moreOpen)}
+            >
+              <IconMore />
+              Mehr
+              <div className={`ikpd-bottombar-popup${moreOpen ? ' open' : ''}`} onClick={e => e.stopPropagation()}>
+                {bottomBarMoreItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`ikpd-bottombar-popup-link${location.pathname === item.path ? ' active' : ''}`}
+                    onClick={closeMore}
+                  >
+                    <item.icon />
+                    {item.label}
+                  </Link>
+                ))}
+                <Link
+                  to="/profil"
+                  className={`ikpd-bottombar-popup-link${location.pathname === '/profil' ? ' active' : ''}`}
+                  onClick={closeMore}
+                >
+                  <IconProfile />
+                  Profil
+                </Link>
+                <div className="ikpd-bottombar-popup-divider" />
+                <button
+                  className="ikpd-bottombar-popup-logout"
+                  onClick={() => { logout(); navigate('/login'); closeMore(); }}
+                >
+                  <IconLogout />
+                  Abmelden
+                </button>
+              </div>
+            </button>
+          </div>
         </nav>
+      </>
+    );
+  }
 
-        <div className="ikpd-sidebar-footer">
-          <Link
-            to="/profil"
-            className="ikpd-sidebar-user"
-            style={{ textDecoration: 'none' }}
-            onClick={closeMobile}
-          >
-            <div className="ikpd-sidebar-avatar">{initials}</div>
-            <div className="ikpd-sidebar-user-info">
-              <div className="ikpd-sidebar-user-name">
-                {rolleLabel}
-              </div>
-              <div className="ikpd-sidebar-user-role">
-                {user?.rolle}
-              </div>
-            </div>
-          </Link>
-          <button
-            className="ikpd-sidebar-logout"
-            onClick={() => { logout(); navigate('/login'); closeMobile(); }}
-          >
-            <IconLogout />
-            Abmelden
-          </button>
+  /* ---- DESKTOP: sidebar ---- */
+  return (
+    <aside className="ikpd-sidebar">
+      <Link to="/" className="ikpd-sidebar-brand">
+        <img src={logo} alt="IKPD Logo" />
+        <div className="ikpd-sidebar-brand-text">
+          IKPD
+          <small>Praxisverwaltung</small>
         </div>
-      </aside>
-    </>
+      </Link>
+
+      <nav className="ikpd-sidebar-nav">
+        {navItems.map((item) => (
+          <React.Fragment key={item.path}>
+            {item.section && (
+              <div className="ikpd-sidebar-section">{item.section}</div>
+            )}
+            <Link
+              to={item.path}
+              className={`ikpd-sidebar-link${location.pathname === item.path ? ' active' : ''}`}
+            >
+              <item.icon />
+              {item.label}
+            </Link>
+          </React.Fragment>
+        ))}
+      </nav>
+
+      <div className="ikpd-sidebar-footer">
+        <Link
+          to="/profil"
+          className="ikpd-sidebar-user"
+          style={{ textDecoration: 'none' }}
+        >
+          <div className="ikpd-sidebar-avatar">{initials}</div>
+          <div className="ikpd-sidebar-user-info">
+            <div className="ikpd-sidebar-user-name">
+              {rolleLabel}
+            </div>
+            <div className="ikpd-sidebar-user-role">
+              {user?.rolle}
+            </div>
+          </div>
+        </Link>
+        <button
+          className="ikpd-sidebar-logout"
+          onClick={() => { logout(); navigate('/login'); }}
+        >
+          <IconLogout />
+          Abmelden
+        </button>
+      </div>
+    </aside>
   );
 };
 
 function AppContent() {
   const location = useLocation();
   const isLogin = location.pathname === '/login';
+  const isMobile = useIsMobile();
 
   return (
-    <div className={isLogin ? '' : 'ikpd-layout'}>
+    <div className={isLogin ? '' : `ikpd-layout${isMobile ? ' ikpd-layout--mobile' : ''}`}>
       <Sidebar />
-      <main className={isLogin ? '' : 'ikpd-main'}>
+      <main className={isLogin ? '' : `ikpd-main ${isMobile ? 'ikpd-main--mobile' : 'ikpd-main--with-sidebar'}`}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
