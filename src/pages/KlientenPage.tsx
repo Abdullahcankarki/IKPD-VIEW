@@ -335,11 +335,22 @@ const KlientenPage = () => {
       <Modal show={showModal} onHide={handleModalClose} size="lg" centered>
         <Form noValidate validated={validated} onSubmit={handleModalSave}>
           <Modal.Header closeButton>
-            <Modal.Title className="fw-bold">
-              {editMode ? "Klient bearbeiten" : "Neuen Klienten anlegen"}
+            <Modal.Title>
+              <span className={`ikpd-modal-icon ${editMode ? 'ikpd-modal-icon--primary' : 'ikpd-modal-icon--success'}`}>
+                {editMode ? (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                )}
+              </span>
+              <span className="ikpd-modal-header-text">
+                {editMode ? "Klient bearbeiten" : "Neuen Klienten anlegen"}
+                <span className="ikpd-modal-subtitle">{editMode ? "Kundendaten aktualisieren" : "Stammdaten des neuen Klienten erfassen"}</span>
+              </span>
             </Modal.Title>
           </Modal.Header>
           <Modal.Body>
+            <div className="ikpd-modal-section-title">Persönliche Daten</div>
             <Row className="gy-4">
               <Col md={6}>
                 <Form.Group className="mb-3" controlId="formName">
@@ -439,9 +450,7 @@ const KlientenPage = () => {
               </Col>
             </Row>
 
-            <div className="mt-4 mb-2">
-              <span className="fs-5 fw-semibold text-dark">Zuordnung</span>
-            </div>
+            <div className="ikpd-modal-section-title mt-3">Zuordnung</div>
             <Row className="gy-3">
               <Col md={4}>
                 <Form.Group className="mb-3" controlId="formPraxisId">
@@ -496,11 +505,7 @@ const KlientenPage = () => {
               </Col>
             </Row>
 
-            <div className="mt-4 mb-2">
-              <span className="fs-5 fw-semibold text-dark">
-                Kontaktperson <span className="fw-normal text-secondary">(optional)</span>
-              </span>
-            </div>
+            <div className="ikpd-modal-section-title mt-3">Kontaktperson (optional)</div>
             <Row className="gy-3">
               <Col md={4}>
                 <Form.Group className="mb-3" controlId="formKontaktName">
@@ -544,42 +549,34 @@ const KlientenPage = () => {
             </Row>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleModalClose} title="Abbrechen">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </Button>
-            <Button
-              variant="primary"
-              type="submit"
-              disabled={saving}
-              title="Speichern"
-            >
-              {saving ? (
-                <Spinner animation="border" size="sm" role="status" />
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              )}
-            </Button>
+            <div className="ikpd-modal-footer-full">
+              <Button variant="light" onClick={handleModalClose}>Abbrechen</Button>
+              <Button variant="primary" type="submit" disabled={saving}>
+                {saving ? <Spinner animation="border" size="sm" role="status" /> : (editMode ? "Speichern" : "Anlegen")}
+              </Button>
+            </div>
           </Modal.Footer>
         </Form>
       </Modal>
 
       {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title className="fw-bold">Löschen bestätigen</Modal.Title>
-        </Modal.Header>
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
         <Modal.Body>
-          <p>
-            Möchten Sie den Klienten <strong>{deleteTarget?.name}</strong> wirklich löschen?
-          </p>
+          <div className="ikpd-modal-delete-body">
+            <div className="ikpd-modal-delete-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </div>
+            <div className="ikpd-modal-delete-title">Klient löschen?</div>
+            <p className="ikpd-modal-delete-text">
+              <strong>{deleteTarget?.name}</strong> wird unwiderruflich gelöscht.
+            </p>
+          </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} title="Abbrechen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </Button>
-          <Button variant="danger" onClick={handleDeleteConfirmed} title="Löschen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-          </Button>
+          <div className="ikpd-modal-footer-full">
+            <Button variant="light" onClick={() => setShowDeleteModal(false)}>Abbrechen</Button>
+            <Button variant="danger" onClick={handleDeleteConfirmed}>Löschen</Button>
+          </div>
         </Modal.Footer>
       </Modal>
     </div>

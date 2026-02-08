@@ -918,23 +918,28 @@ body {
    MODALS
    ============================================== */
 
+/* ---- Modal base ---- */
 .modal-content {
-  border-radius: var(--ikpd-radius-lg) !important;
+  border-radius: var(--ikpd-radius-xl) !important;
   border: none;
-  box-shadow: var(--ikpd-shadow-xl);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.03);
   overflow: hidden;
 }
 
 .modal-header {
   background: var(--ikpd-surface);
-  border-bottom: 1px solid var(--ikpd-border);
+  border-bottom: 1px solid var(--ikpd-border-light);
   padding: 1.25rem 1.5rem;
+  gap: 0.75rem;
 }
 
 .modal-title {
   color: var(--ikpd-text);
   font-weight: 700;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
 .modal-body {
@@ -942,13 +947,169 @@ body {
 }
 
 .modal-footer {
-  border-top: 1px solid var(--ikpd-border);
+  border-top: 1px solid var(--ikpd-border-light);
   padding: 1rem 1.5rem;
   background: var(--ikpd-bg);
+  gap: 0.5rem;
 }
 
 .modal-backdrop.show {
-  backdrop-filter: blur(4px);
+  backdrop-filter: blur(6px);
+  background-color: rgba(15, 23, 42, 0.3);
+}
+
+/* ---- Modal icon in header ---- */
+.ikpd-modal-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ikpd-modal-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.ikpd-modal-icon--primary {
+  background: var(--ikpd-primary-100);
+  color: var(--ikpd-primary);
+}
+
+.ikpd-modal-icon--danger {
+  background: var(--ikpd-danger-bg);
+  color: var(--ikpd-danger);
+}
+
+.ikpd-modal-icon--info {
+  background: var(--ikpd-info-bg);
+  color: var(--ikpd-info);
+}
+
+.ikpd-modal-icon--success {
+  background: var(--ikpd-success-bg);
+  color: var(--ikpd-success);
+}
+
+.ikpd-modal-icon--warning {
+  background: var(--ikpd-warning-bg);
+  color: var(--ikpd-warning);
+}
+
+/* ---- Modal header info ---- */
+.ikpd-modal-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.ikpd-modal-subtitle {
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--ikpd-text-muted);
+}
+
+/* ---- Modal form sections ---- */
+.ikpd-modal-section {
+  margin-bottom: 1.25rem;
+}
+
+.ikpd-modal-section-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ikpd-text-muted);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--ikpd-border-light);
+}
+
+/* ---- Delete confirmation ---- */
+.ikpd-modal-delete-body {
+  text-align: center;
+  padding: 1.5rem 1rem;
+}
+
+.ikpd-modal-delete-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--ikpd-danger-bg);
+  color: var(--ikpd-danger);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.ikpd-modal-delete-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.ikpd-modal-delete-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ikpd-text);
+  margin-bottom: 0.4rem;
+}
+
+.ikpd-modal-delete-text {
+  font-size: 0.88rem;
+  color: var(--ikpd-text-secondary);
+  margin: 0;
+}
+
+/* ---- Modal footer buttons ---- */
+.ikpd-modal-footer-full {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.ikpd-modal-footer-full .btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+/* ---- Form labels inside modals ---- */
+.modal-body .form-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ikpd-text-secondary);
+  margin-bottom: 0.35rem;
+}
+
+.modal-body .form-control,
+.modal-body .form-select {
+  border-radius: var(--ikpd-radius-sm);
+  border: 1.5px solid var(--ikpd-border);
+  padding: 0.55rem 0.85rem;
+  font-size: 0.88rem;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.modal-body .form-control:focus,
+.modal-body .form-select:focus {
+  border-color: var(--ikpd-primary);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.1);
+}
+
+/* close button */
+.modal-header .btn-close {
+  opacity: 0.4;
+  padding: 0.75rem;
+}
+
+.modal-header .btn-close:hover {
+  opacity: 0.8;
 }
 
 /* ==============================================

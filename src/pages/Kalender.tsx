@@ -430,7 +430,15 @@ const Kalender = () => {
         {selectedEvent && (
           <>
             <Modal.Header closeButton>
-              <Modal.Title style={{ fontSize: '1rem' }}>Termindetails</Modal.Title>
+              <Modal.Title>
+                <span className="ikpd-modal-icon ikpd-modal-icon--info">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                </span>
+                <span className="ikpd-modal-header-text">
+                  Termindetails
+                  <span className="ikpd-modal-subtitle">{selectedEvent.klientName}</span>
+                </span>
+              </Modal.Title>
             </Modal.Header>
             <Modal.Body>
               <div className="ikpd-kal-detail">
@@ -475,7 +483,15 @@ const Kalender = () => {
       {/* ======== CREATE MODAL ======== */}
       <Modal show={showModal} onHide={() => setShowModal(false)} centered backdrop="static">
         <Modal.Header closeButton>
-          <Modal.Title style={{ fontSize: '1rem' }}>Neuen Termin erstellen</Modal.Title>
+          <Modal.Title>
+            <span className="ikpd-modal-icon ikpd-modal-icon--success">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><path d="m9 16 2 2 4-4"/></svg>
+            </span>
+            <span className="ikpd-modal-header-text">
+              Neuen Termin erstellen
+              <span className="ikpd-modal-subtitle">Klient, Zeit und Dauer angeben</span>
+            </span>
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           {selectedSlot && (
@@ -542,12 +558,10 @@ const Kalender = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)} title="Abbrechen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-          </Button>
-          <Button variant="primary" title="Termin speichern" onClick={handleCreateTermin}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><path d="m9 16 2 2 4-4" /></svg>
-          </Button>
+          <div className="ikpd-modal-footer-full">
+            <Button variant="light" onClick={() => setShowModal(false)}>Abbrechen</Button>
+            <Button variant="primary" onClick={handleCreateTermin}>Termin erstellen</Button>
+          </div>
         </Modal.Footer>
       </Modal>
     </div>

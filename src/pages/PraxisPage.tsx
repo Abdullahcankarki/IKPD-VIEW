@@ -254,7 +254,13 @@ const PraxisPage: React.FC = () => {
       <Modal show={showModal} onHide={handleCloseModal} size="lg" centered backdrop="static">
         <Modal.Header closeButton>
           <Modal.Title>
-            {editPraxis ? "Praxis bearbeiten" : "Neue Praxis"}
+            <span className={`ikpd-modal-icon ${editPraxis ? 'ikpd-modal-icon--primary' : 'ikpd-modal-icon--success'}`}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </span>
+            <span className="ikpd-modal-header-text">
+              {editPraxis ? "Praxis bearbeiten" : "Neue Praxis"}
+              <span className="ikpd-modal-subtitle">{editPraxis ? 'Praxisdaten aktualisieren' : 'Standort und Bankdaten erfassen'}</span>
+            </span>
           </Modal.Title>
         </Modal.Header>
         <Form
@@ -378,35 +384,29 @@ const PraxisPage: React.FC = () => {
             </Row>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseModal} title="Abbrechen">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </Button>
-            <Button type="submit" variant="primary" title="Speichern">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </Button>
+            <div className="ikpd-modal-footer-full">
+              <Button variant="light" onClick={handleCloseModal}>Abbrechen</Button>
+              <Button type="submit" variant="primary">{editPraxis ? "Speichern" : "Anlegen"}</Button>
+            </div>
           </Modal.Footer>
         </Form>
       </Modal>
 
-      <Modal
-        show={showDeleteModal}
-        onHide={() => setShowDeleteModal(false)}
-        centered
-        backdrop="static"
-      >
-        <Modal.Header closeButton>
-          <Modal.Title>Löschen bestätigen</Modal.Title>
-        </Modal.Header>
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
         <Modal.Body>
-          Möchten Sie diese Praxis wirklich löschen?
+          <div className="ikpd-modal-delete-body">
+            <div className="ikpd-modal-delete-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </div>
+            <div className="ikpd-modal-delete-title">Praxis löschen?</div>
+            <p className="ikpd-modal-delete-text">Diese Praxis wird unwiderruflich gelöscht.</p>
+          </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} title="Abbrechen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </Button>
-          <Button variant="danger" onClick={handleDelete} title="Löschen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-          </Button>
+          <div className="ikpd-modal-footer-full">
+            <Button variant="light" onClick={() => setShowDeleteModal(false)}>Abbrechen</Button>
+            <Button variant="danger" onClick={handleDelete}>Löschen</Button>
+          </div>
         </Modal.Footer>
       </Modal>
 

@@ -290,7 +290,19 @@ const AuftraggeberComponent = () => {
 
       <Modal show={showModal} onHide={() => setShowModal(false)} backdrop="static" centered size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>{isEditing ? 'Auftraggeber bearbeiten' : 'Neuer Auftraggeber'}</Modal.Title>
+          <Modal.Title>
+            <span className={`ikpd-modal-icon ${isEditing ? 'ikpd-modal-icon--primary' : 'ikpd-modal-icon--success'}`}>
+              {isEditing ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              )}
+            </span>
+            <span className="ikpd-modal-header-text">
+              {isEditing ? 'Auftraggeber bearbeiten' : 'Neuer Auftraggeber'}
+              <span className="ikpd-modal-subtitle">{isEditing ? 'Kontaktdaten aktualisieren' : 'Institution und Kontaktdaten erfassen'}</span>
+            </span>
+          </Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
@@ -380,29 +392,28 @@ const AuftraggeberComponent = () => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)} title="Abbrechen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </Button>
-          <Button variant="primary" onClick={handleSubmit} title={isEditing ? 'Speichern' : 'Erstellen'}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </Button>
+          <div className="ikpd-modal-footer-full">
+            <Button variant="light" onClick={() => setShowModal(false)}>Abbrechen</Button>
+            <Button variant="primary" onClick={handleSubmit}>{isEditing ? 'Speichern' : 'Anlegen'}</Button>
+          </div>
         </Modal.Footer>
       </Modal>
 
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Löschen bestätigen</Modal.Title>
-        </Modal.Header>
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
         <Modal.Body>
-          Möchten Sie diesen Auftraggeber wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.
+          <div className="ikpd-modal-delete-body">
+            <div className="ikpd-modal-delete-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </div>
+            <div className="ikpd-modal-delete-title">Auftraggeber löschen?</div>
+            <p className="ikpd-modal-delete-text">Dieser Eintrag wird unwiderruflich gelöscht.</p>
+          </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} title="Abbrechen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </Button>
-          <Button variant="danger" onClick={confirmDelete} title="Löschen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-          </Button>
+          <div className="ikpd-modal-footer-full">
+            <Button variant="light" onClick={() => setShowDeleteModal(false)}>Abbrechen</Button>
+            <Button variant="danger" onClick={confirmDelete}>Löschen</Button>
+          </div>
         </Modal.Footer>
       </Modal>
 

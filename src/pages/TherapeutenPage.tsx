@@ -241,7 +241,19 @@ const TherapeutenPage: React.FC = () => {
 
       <Modal show={showModal} onHide={handleCloseModal} backdrop="static" keyboard={false} size="lg">
         <Modal.Header closeButton>
-          <Modal.Title>{isEditing ? "Therapeut bearbeiten" : "Neuen Therapeut anlegen"}</Modal.Title>
+          <Modal.Title>
+            <span className={`ikpd-modal-icon ${isEditing ? 'ikpd-modal-icon--primary' : 'ikpd-modal-icon--success'}`}>
+              {isEditing ? (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+              )}
+            </span>
+            <span className="ikpd-modal-header-text">
+              {isEditing ? "Therapeut bearbeiten" : "Neuen Therapeut anlegen"}
+              <span className="ikpd-modal-subtitle">{isEditing ? "Therapeutendaten aktualisieren" : "Zugangsdaten und Informationen erfassen"}</span>
+            </span>
+          </Modal.Title>
         </Modal.Header>
         <Form noValidate validated={validated} onSubmit={handleSubmit}>
           <Modal.Body>
@@ -402,30 +414,31 @@ const TherapeutenPage: React.FC = () => {
             </Row>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={handleCloseModal} title="Abbrechen">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </Button>
-            <Button variant="primary" type="submit" title={isEditing ? "Speichern" : "Erstellen"}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </Button>
+            <div className="ikpd-modal-footer-full">
+              <Button variant="light" onClick={handleCloseModal}>Abbrechen</Button>
+              <Button variant="primary" type="submit">{isEditing ? "Speichern" : "Anlegen"}</Button>
+            </div>
           </Modal.Footer>
         </Form>
       </Modal>
 
-      <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)} backdrop="static" keyboard={false}>
-        <Modal.Header closeButton>
-          <Modal.Title>Bestätigung</Modal.Title>
-        </Modal.Header>
+      <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)} centered size="sm">
         <Modal.Body>
-          Möchten Sie diesen Therapeuten wirklich löschen?
+          <div className="ikpd-modal-delete-body">
+            <div className="ikpd-modal-delete-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </div>
+            <div className="ikpd-modal-delete-title">Therapeut löschen?</div>
+            <p className="ikpd-modal-delete-text">
+              <strong>{therapeutToDelete ? `${therapeutToDelete.vorname} ${therapeutToDelete.nachname}` : ''}</strong> wird unwiderruflich gelöscht.
+            </p>
+          </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowConfirmModal(false)} title="Abbrechen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </Button>
-          <Button variant="danger" onClick={handleDelete} title="Löschen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-          </Button>
+          <div className="ikpd-modal-footer-full">
+            <Button variant="light" onClick={() => setShowConfirmModal(false)}>Abbrechen</Button>
+            <Button variant="danger" onClick={handleDelete}>Löschen</Button>
+          </div>
         </Modal.Footer>
       </Modal>
 

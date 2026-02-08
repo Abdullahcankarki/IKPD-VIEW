@@ -266,7 +266,15 @@ const ProfilPage: React.FC = () => {
       <Modal show={showPasswordModal} onHide={() => setShowPasswordModal(false)} centered backdrop="static">
         <Form onSubmit={handlePasswordChange}>
           <Modal.Header closeButton>
-            <Modal.Title>Passwort ändern</Modal.Title>
+            <Modal.Title>
+              <span className="ikpd-modal-icon ikpd-modal-icon--warning">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <span className="ikpd-modal-header-text">
+                Passwort ändern
+                <span className="ikpd-modal-subtitle">Altes Passwort eingeben und neues vergeben</span>
+              </span>
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form.Group className="mb-3">
@@ -306,16 +314,12 @@ const ProfilPage: React.FC = () => {
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowPasswordModal(false)} title="Abbrechen">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </Button>
-            <Button variant="primary" type="submit" disabled={passwordSaving} title="Passwort ändern">
-              {passwordSaving ? (
-                <Spinner animation="border" size="sm" />
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              )}
-            </Button>
+            <div className="ikpd-modal-footer-full">
+              <Button variant="light" onClick={() => setShowPasswordModal(false)}>Abbrechen</Button>
+              <Button variant="primary" type="submit" disabled={passwordSaving}>
+                {passwordSaving ? <Spinner animation="border" size="sm" /> : "Passwort ändern"}
+              </Button>
+            </div>
           </Modal.Footer>
         </Form>
       </Modal>

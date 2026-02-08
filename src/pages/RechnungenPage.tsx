@@ -325,7 +325,15 @@ const RechnungenPage: React.FC = () => {
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg" centered>
         <Form noValidate validated={validated} onSubmit={handleSubmit}>
           <Modal.Header closeButton>
-            <Modal.Title className="fw-bold">Neue Rechnung erstellen</Modal.Title>
+            <Modal.Title>
+              <span className="ikpd-modal-icon ikpd-modal-icon--success">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              </span>
+              <span className="ikpd-modal-header-text">
+                Neue Rechnung erstellen
+                <span className="ikpd-modal-subtitle">Klient, Zeitraum und Maßnahme auswählen</span>
+              </span>
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Row className="gy-3">
@@ -402,28 +410,27 @@ const RechnungenPage: React.FC = () => {
             </Row>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowModal(false)} title="Abbrechen">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </Button>
-            <Button variant="primary" type="submit" disabled={saving} title="Erstellen">
-              {saving ? (
-                <Spinner animation="border" size="sm" />
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-              )}
-            </Button>
+            <div className="ikpd-modal-footer-full">
+              <Button variant="light" onClick={() => setShowModal(false)}>Abbrechen</Button>
+              <Button variant="primary" type="submit" disabled={saving}>
+                {saving ? <Spinner animation="border" size="sm" /> : "Erstellen"}
+              </Button>
+            </div>
           </Modal.Footer>
         </Form>
       </Modal>
 
       {/* Detail Modal */}
       <Modal show={showDetailModal} onHide={() => setShowDetailModal(false)} size="lg" centered>
-        <Modal.Header closeButton className="ikpd-invoice-header">
-          <Modal.Title className="d-flex align-items-center gap-2">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
-            </svg>
-            {detailRechnung?.rechnungsnummer}
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <span className="ikpd-modal-icon ikpd-modal-icon--info">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </span>
+            <span className="ikpd-modal-header-text">
+              {detailRechnung?.rechnungsnummer}
+              <span className="ikpd-modal-subtitle">Rechnungsdetails und Leistungen</span>
+            </span>
           </Modal.Title>
         </Modal.Header>
         <Modal.Body className="ikpd-invoice-body">
@@ -507,34 +514,36 @@ const RechnungenPage: React.FC = () => {
           )}
         </Modal.Body>
         <Modal.Footer>
-          {detailRechnung && (
-            <Button variant="success" onClick={() => handleDownloadPdf(detailRechnung)} title="PDF herunterladen">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </Button>
-          )}
-          <Button variant="secondary" onClick={() => setShowDetailModal(false)} title="Schließen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </Button>
+          <div className="ikpd-modal-footer-full">
+            <Button variant="light" onClick={() => setShowDetailModal(false)}>Schließen</Button>
+            {detailRechnung && (
+              <Button variant="success" onClick={() => handleDownloadPdf(detailRechnung)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                PDF
+              </Button>
+            )}
+          </div>
         </Modal.Footer>
       </Modal>
 
       {/* Delete Confirmation Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title className="fw-bold">Löschen bestätigen</Modal.Title>
-        </Modal.Header>
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
         <Modal.Body>
-          <p>
-            Möchten Sie die Rechnung <strong>{deleteTarget?.rechnungsnummer}</strong> wirklich löschen?
-          </p>
+          <div className="ikpd-modal-delete-body">
+            <div className="ikpd-modal-delete-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </div>
+            <div className="ikpd-modal-delete-title">Rechnung löschen?</div>
+            <p className="ikpd-modal-delete-text">
+              <strong>{deleteTarget?.rechnungsnummer}</strong> wird unwiderruflich gelöscht.
+            </p>
+          </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} title="Abbrechen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </Button>
-          <Button variant="danger" onClick={handleDeleteConfirmed} title="Löschen">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-          </Button>
+          <div className="ikpd-modal-footer-full">
+            <Button variant="light" onClick={() => setShowDeleteModal(false)}>Abbrechen</Button>
+            <Button variant="danger" onClick={handleDeleteConfirmed}>Löschen</Button>
+          </div>
         </Modal.Footer>
       </Modal>
     </div>
