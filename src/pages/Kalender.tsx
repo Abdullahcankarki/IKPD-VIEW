@@ -63,7 +63,8 @@ const Kalender = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<Date | null>(null);
   const [beschreibung, setBeschreibung] = useState('');
-  const [dauer, setDauer] = useState(30);
+  const [dauerStunden, setDauerStunden] = useState(0);
+  const [dauerMinuten, setDauerMinuten] = useState(30);
   const [klientId, setKlientId] = useState('');
   const [klienten, setKlienten] = useState<any[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
@@ -179,7 +180,8 @@ const Kalender = () => {
     setShowModal(true);
     setErrorMessage('');
     setBeschreibung('');
-    setDauer(30);
+    setDauerStunden(0);
+    setDauerMinuten(30);
     setKlientId('');
   };
 
@@ -195,7 +197,7 @@ const Kalender = () => {
 
       await createTermin({
         datum: datum.toISOString(),
-        dauer,
+        dauer: dauerStunden * 60 + dauerMinuten,
         beschreibung,
         klientId,
       });
@@ -503,13 +505,27 @@ const Kalender = () => {
               </Form.Select>
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Dauer (Minuten)</Form.Label>
-              <Form.Control
-                type="number"
-                value={dauer}
-                onChange={(e: any) => setDauer(Number(e.target.value))}
-                min={1}
-              />
+              <Form.Label>Dauer</Form.Label>
+              <div className="d-flex gap-2 align-items-center">
+                <Form.Control
+                  type="number"
+                  value={dauerStunden}
+                  onChange={(e: any) => setDauerStunden(Math.max(0, Number(e.target.value)))}
+                  min={0}
+                  style={{ width: '80px' }}
+                />
+                <span className="text-muted" style={{ fontSize: '0.85rem' }}>Std.</span>
+                <Form.Select
+                  value={dauerMinuten}
+                  onChange={(e: any) => setDauerMinuten(Number(e.target.value))}
+                  style={{ width: '80px' }}
+                >
+                  {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </Form.Select>
+                <span className="text-muted" style={{ fontSize: '0.85rem' }}>Min.</span>
+              </div>
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Beschreibung</Form.Label>

@@ -385,7 +385,17 @@ const KlientenPage = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3" controlId="formEmail">
-                  <Form.Label>E-Mail</Form.Label>
+                  <div className="d-flex align-items-center justify-content-between mb-1">
+                    <Form.Label className="mb-0">E-Mail</Form.Label>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}
+                      onClick={() => handleChange("email", `platzhalter-${Date.now()}@ikpd.de`)}
+                    >
+                      Platzhalter
+                    </Button>
+                  </div>
                   <Form.Control
                     required
                     type="email"
@@ -403,7 +413,17 @@ const KlientenPage = () => {
                   </Form.Control.Feedback>
                 </Form.Group>
                 <Form.Group className="mb-3" controlId="formTelefonnummer">
-                  <Form.Label>Telefonnummer</Form.Label>
+                  <div className="d-flex align-items-center justify-content-between mb-1">
+                    <Form.Label className="mb-0">Telefonnummer</Form.Label>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem' }}
+                      onClick={() => handleChange("telefonnummer", "000 0000000")}
+                    >
+                      Platzhalter
+                    </Button>
+                  </div>
                   <Form.Control
                     required
                     type="tel"

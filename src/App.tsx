@@ -269,6 +269,7 @@ function AppContent() {
           <Route path="/praxis" element={<RequireAuth><PraxisPage /></RequireAuth>} />
           <Route path="/rechnungen" element={<RequireAuth><RechnungenPage /></RequireAuth>} />
           <Route path="/profil" element={<RequireAuth><ProfilPage /></RequireAuth>} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
     </div>
