@@ -70,6 +70,7 @@ export interface TerminResource {
   dauer: number; // in Minuten
   beschreibung?: string;
   status: 'geplant' | 'abgeschlossen' | 'abgesagt';
+  stundensatz?: number;
   klientId: string;
   klientName: string;
   therapeutId: string;
@@ -100,6 +101,7 @@ export interface RechnungResource {
     beschreibung?: string;
     therapeutName: string;
     qualifikation: string;
+    stundensatz?: number;
   }[];
 
   gesamtStunden: number;
@@ -118,4 +120,28 @@ export interface RechnungResource {
 
   praxisId: string;
   erstelltVon: string;
+}
+
+export interface EmailLogResource {
+  _id: string;
+  empfaenger: string;
+  betreff: string;
+  typ: 'terminBestaetigung' | 'stornoNotification' | 'passwortReset' | 'rechnung';
+  status: 'gesendet' | 'fehlgeschlagen' | 'eingereiht';
+  fehler?: string;
+  klientName?: string;
+  therapeutName?: string;
+  gesendetAm?: string;
+  createdAt: string;
+}
+
+export interface StornoInfo {
+  terminDatum: string;
+  terminZeit: string;
+  dauer: number;
+  therapeutName: string;
+  praxisName: string;
+  praxisAdresse: string;
+  kannStorniert: boolean;
+  bereitsStorniert: boolean;
 }

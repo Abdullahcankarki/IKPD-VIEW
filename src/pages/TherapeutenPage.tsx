@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Modal, Form, Toast, Row, Col, Badge } from "react-bootstrap";
+import { Button, Modal, Form, Toast, Row, Col, Badge, Spinner } from "react-bootstrap";
 import {fetchAlleTherapeuten, createTherapeut, updateTherapeut, deleteTherapeut, fetchAllePraxen } from "../services/api";
 import { TherapeutResource, PraxisResource } from "../Resources";
 
@@ -31,6 +31,8 @@ const TherapeutenPage: React.FC = () => {
   const [therapeutToDelete, setTherapeutToDelete] = useState<TherapeutResource | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [praxen, setPraxen] = useState<PraxisResource[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadTherapeuten();
@@ -78,12 +80,14 @@ const TherapeutenPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (saving) return;
     const form = e.currentTarget;
     if (form.checkValidity() === false) {
       e.stopPropagation();
       setValidated(true);
       return;
     }
+    setSaving(true);
     try {
       if (isEditing) {
         await updateTherapeut(currentTherapeut, currentTherapeut._id);
@@ -96,6 +100,8 @@ const TherapeutenPage: React.FC = () => {
       loadTherapeuten();
     } catch (error) {
       showToastMessage("Fehler beim Speichern des Therapeuten.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -105,16 +111,19 @@ const TherapeutenPage: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (!therapeutToDelete) return;
+    if (!therapeutToDelete || deleting) return;
+    setDeleting(true);
     try {
       await deleteTherapeut(therapeutToDelete._id);
       showToastMessage("Therapeut erfolgreich gelöscht.");
       loadTherapeuten();
     } catch (error) {
       showToastMessage("Fehler beim Löschen des Therapeuten.");
+    } finally {
+      setDeleting(false);
+      setShowConfirmModal(false);
+      setTherapeutToDelete(null);
     }
-    setShowConfirmModal(false);
-    setTherapeutToDelete(null);
   };
 
   const showToastMessage = (message: string) => {
@@ -416,7 +425,7 @@ const TherapeutenPage: React.FC = () => {
           <Modal.Footer>
             <div className="ikpd-modal-footer-full">
               <Button variant="light" onClick={handleCloseModal}>Abbrechen</Button>
-              <Button variant="primary" type="submit">{isEditing ? "Speichern" : "Anlegen"}</Button>
+              <Button variant="primary" type="submit" disabled={saving}>{saving ? <Spinner animation="border" size="sm" /> : (isEditing ? "Speichern" : "Anlegen")}</Button>
             </div>
           </Modal.Footer>
         </Form>
@@ -437,7 +446,7 @@ const TherapeutenPage: React.FC = () => {
         <Modal.Footer>
           <div className="ikpd-modal-footer-full">
             <Button variant="light" onClick={() => setShowConfirmModal(false)}>Abbrechen</Button>
-            <Button variant="danger" onClick={handleDelete}>Löschen</Button>
+            <Button variant="danger" onClick={handleDelete} disabled={deleting}>{deleting ? <Spinner animation="border" size="sm" /> : "Löschen"}</Button>
           </div>
         </Modal.Footer>
       </Modal>

@@ -51,6 +51,8 @@ const PraxisPage: React.FC = () => {
   const [toast, setToast] = useState<{ message: string; bg: string } | null>(
     null
   );
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -92,6 +94,7 @@ const PraxisPage: React.FC = () => {
 
   const handleSave = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (saving) return;
     const form = event.currentTarget;
     if (!form.checkValidity()) {
       form.classList.add("was-validated");
@@ -112,6 +115,7 @@ const PraxisPage: React.FC = () => {
       therapeuten: therapeuten.filter((t) => therapeutenIds.includes(t._id)),
     };
 
+    setSaving(true);
     try {
       if (editPraxis) {
         await updatePraxis(praxisToSave, editPraxis._id);
@@ -124,6 +128,8 @@ const PraxisPage: React.FC = () => {
       loadData();
     } catch {
       setToast({ message: "Fehler beim Speichern", bg: "danger" });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -133,7 +139,8 @@ const PraxisPage: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (!deleteId) return;
+    if (!deleteId || deleting) return;
+    setDeleting(true);
     try {
       await deletePraxis(deleteId);
       setToast({ message: "Praxis gelöscht", bg: "success" });
@@ -142,6 +149,8 @@ const PraxisPage: React.FC = () => {
       loadData();
     } catch {
       setToast({ message: "Fehler beim Löschen", bg: "danger" });
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -386,7 +395,7 @@ const PraxisPage: React.FC = () => {
           <Modal.Footer>
             <div className="ikpd-modal-footer-full">
               <Button variant="light" onClick={handleCloseModal}>Abbrechen</Button>
-              <Button type="submit" variant="primary">{editPraxis ? "Speichern" : "Anlegen"}</Button>
+              <Button type="submit" variant="primary" disabled={saving}>{saving ? "Speichere..." : (editPraxis ? "Speichern" : "Anlegen")}</Button>
             </div>
           </Modal.Footer>
         </Form>
@@ -405,7 +414,7 @@ const PraxisPage: React.FC = () => {
         <Modal.Footer>
           <div className="ikpd-modal-footer-full">
             <Button variant="light" onClick={() => setShowDeleteModal(false)}>Abbrechen</Button>
-            <Button variant="danger" onClick={handleDelete}>Löschen</Button>
+            <Button variant="danger" onClick={handleDelete} disabled={deleting}>{deleting ? "Lösche..." : "Löschen"}</Button>
           </div>
         </Modal.Footer>
       </Modal>

@@ -1,6 +1,7 @@
-import { Modal, Button, Form } from 'react-bootstrap';
-import { fetchAlleKlienten, createTermin, fetchMeineTermine } from '../services/api';
+import { Modal, Button, Form, Spinner } from 'react-bootstrap';
+import { fetchAlleKlienten, createTermin, updateTermin, deleteTermin, fetchMeineTermine } from '../services/api';
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 /* ---- Helpers ---- */
 const WOCHENTAGE = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
@@ -44,16 +45,19 @@ interface TerminEvent {
   id: string;
   title: string;
   klientName: string;
+  klientId: string;
   start: Date;
   end: Date;
   dauer: number;
   status: string;
   beschreibung?: string;
+  stundensatz?: number;
 }
 
 type ViewMode = 'month' | 'week' | 'day';
 
 const Kalender = () => {
+  const { isAdmin } = useAuth();
   const [events, setEvents] = useState<TerminEvent[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('month');
@@ -69,9 +73,29 @@ const Kalender = () => {
   const [klienten, setKlienten] = useState<any[]>([]);
   const [errorMessage, setErrorMessage] = useState('');
   const [startTime, setStartTime] = useState('09:00');
+  const [saving, setSaving] = useState(false);
 
   // Detail popup
   const [selectedEvent, setSelectedEvent] = useState<TerminEvent | null>(null);
+
+  // Edit modal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editEvent, setEditEvent] = useState<TerminEvent | null>(null);
+  const [editStartTime, setEditStartTime] = useState('09:00');
+  const [editDauerStunden, setEditDauerStunden] = useState(0);
+  const [editDauerMinuten, setEditDauerMinuten] = useState(30);
+  const [editBeschreibung, setEditBeschreibung] = useState('');
+  const [editKlientId, setEditKlientId] = useState('');
+  const [editStatus, setEditStatus] = useState('geplant');
+  const [editDate, setEditDate] = useState('');
+  const [editStundensatz, setEditStundensatz] = useState<number | ''>('');
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+
+  // Delete modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteEvent, setDeleteEvent] = useState<TerminEvent | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchAlleKlienten().then(setKlienten).catch(console.error);
@@ -85,11 +109,13 @@ const Kalender = () => {
           id: t._id,
           title: t.klientName,
           klientName: t.klientName,
+          klientId: t.klientId,
           start: new Date(t.datum),
           end: new Date(new Date(t.datum).getTime() + t.dauer * 60000),
           dauer: t.dauer,
           status: t.status,
           beschreibung: t.beschreibung,
+          stundensatz: t.stundensatz,
         }))
       );
     } catch (err) {
@@ -186,10 +212,12 @@ const Kalender = () => {
   };
 
   const handleCreateTermin = async () => {
+    if (saving) return;
     if (!selectedSlot || !klientId) {
       setErrorMessage('Bitte wählen Sie einen Klienten.');
       return;
     }
+    setSaving(true);
     try {
       const [h, m] = startTime.split(':').map(Number);
       const datum = new Date(selectedSlot);
@@ -205,11 +233,83 @@ const Kalender = () => {
       await loadTermine();
     } catch {
       setErrorMessage('Der Termin konnte nicht erstellt werden.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /* ---- Edit handler ---- */
+  const openEditModal = (ev: TerminEvent) => {
+    setEditEvent(ev);
+    setEditStartTime(formatTime(ev.start));
+    setEditDauerStunden(Math.floor(ev.dauer / 60));
+    setEditDauerMinuten(ev.dauer % 60);
+    setEditBeschreibung(ev.beschreibung || '');
+    setEditKlientId(ev.klientId);
+    setEditStatus(ev.status);
+    setEditDate(ev.start.toISOString().slice(0, 10));
+    setEditStundensatz(ev.stundensatz ?? '');
+    setEditError('');
+    setSelectedEvent(null);
+    setShowEditModal(true);
+  };
+
+  const handleUpdateTermin = async () => {
+    if (editSaving || !editEvent) return;
+    if (!editKlientId) {
+      setEditError('Bitte wählen Sie einen Klienten.');
+      return;
+    }
+    setEditSaving(true);
+    try {
+      const [h, m] = editStartTime.split(':').map(Number);
+      const datum = new Date(editDate);
+      datum.setHours(h, m, 0, 0);
+
+      const updateData: any = {
+        datum: datum.toISOString(),
+        dauer: editDauerStunden * 60 + editDauerMinuten,
+        beschreibung: editBeschreibung,
+        klientId: editKlientId,
+        status: editStatus as 'geplant' | 'abgeschlossen' | 'abgesagt',
+      };
+      if (isAdmin && editStundensatz !== '') {
+        updateData.stundensatz = Number(editStundensatz);
+      }
+      await updateTermin(editEvent.id, updateData);
+      setShowEditModal(false);
+      await loadTermine();
+    } catch {
+      setEditError('Der Termin konnte nicht aktualisiert werden.');
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
+  /* ---- Delete handler ---- */
+  const openDeleteModal = (ev: TerminEvent) => {
+    setDeleteEvent(ev);
+    setSelectedEvent(null);
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteTermin = async () => {
+    if (deleting || !deleteEvent) return;
+    setDeleting(true);
+    try {
+      await deleteTermin(deleteEvent.id);
+      setShowDeleteModal(false);
+      setDeleteEvent(null);
+      await loadTermine();
+    } catch {
+      setEditError('Der Termin konnte nicht gelöscht werden.');
+    } finally {
+      setDeleting(false);
     }
   };
 
   /* ---- Hours for week/day view ---- */
-  const hours = Array.from({ length: 13 }, (_, i) => i + 7); // 7:00 - 19:00
+  const hours = Array.from({ length: 24 }, (_, i) => i); // 0:00 - 23:00
 
   return (
     <div className="ikpd-page ikpd-kal">
@@ -476,8 +576,159 @@ const Kalender = () => {
                 )}
               </div>
             </Modal.Body>
+            <Modal.Footer>
+              <div className="ikpd-modal-footer-full">
+                <Button variant="outline-danger" onClick={() => openDeleteModal(selectedEvent)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                  {' '}Löschen
+                </Button>
+                <Button variant="primary" onClick={() => openEditModal(selectedEvent)}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                  {' '}Bearbeiten
+                </Button>
+              </div>
+            </Modal.Footer>
           </>
         )}
+      </Modal>
+
+      {/* ======== EDIT MODAL ======== */}
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)} centered backdrop="static">
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <span className="ikpd-modal-icon ikpd-modal-icon--primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+            </span>
+            <span className="ikpd-modal-header-text">
+              Termin bearbeiten
+              <span className="ikpd-modal-subtitle">Daten des Termins ändern</span>
+            </span>
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Datum</Form.Label>
+              <Form.Control
+                type="date"
+                value={editDate}
+                onChange={(e) => setEditDate(e.target.value)}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Startzeit</Form.Label>
+              <Form.Control
+                type="time"
+                value={editStartTime}
+                onChange={(e) => setEditStartTime(e.target.value)}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Klient</Form.Label>
+              <Form.Select value={editKlientId} onChange={(e: any) => setEditKlientId(e.target.value)}>
+                <option value="">Klient auswählen</option>
+                {klienten.map((k) => (
+                  <option key={k._id} value={k._id}>{k.name}</option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Dauer</Form.Label>
+              <div className="d-flex gap-2 align-items-center">
+                <Form.Control
+                  type="number"
+                  value={editDauerStunden}
+                  onChange={(e: any) => setEditDauerStunden(Math.max(0, Number(e.target.value)))}
+                  min={0}
+                  style={{ width: '80px' }}
+                />
+                <span className="text-muted" style={{ fontSize: '0.85rem' }}>Std.</span>
+                <Form.Select
+                  value={editDauerMinuten}
+                  onChange={(e: any) => setEditDauerMinuten(Number(e.target.value))}
+                  style={{ width: '80px' }}
+                >
+                  {[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55].map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </Form.Select>
+                <span className="text-muted" style={{ fontSize: '0.85rem' }}>Min.</span>
+              </div>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Status</Form.Label>
+              <Form.Select value={editStatus} onChange={(e: any) => setEditStatus(e.target.value)}>
+                <option value="geplant">Geplant</option>
+                <option value="abgeschlossen">Abgeschlossen</option>
+                <option value="abgesagt">Abgesagt</option>
+              </Form.Select>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Stundensatz (€/Std.)</Form.Label>
+              {isAdmin ? (
+                <Form.Control
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editStundensatz}
+                  onChange={(e: any) => setEditStundensatz(e.target.value === '' ? '' : Number(e.target.value))}
+                />
+              ) : (
+                <Form.Control
+                  type="text"
+                  value={editStundensatz !== '' ? `${editStundensatz} €` : '–'}
+                  readOnly
+                  plaintext
+                />
+              )}
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Beschreibung</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                value={editBeschreibung}
+                onChange={(e: any) => setEditBeschreibung(e.target.value)}
+              />
+            </Form.Group>
+          </Form>
+          {editError && (
+            <div className="alert alert-danger py-2" role="alert">{editError}</div>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <div className="ikpd-modal-footer-full">
+            <Button variant="light" onClick={() => setShowEditModal(false)}>Abbrechen</Button>
+            <Button variant="primary" onClick={handleUpdateTermin} disabled={editSaving}>
+              {editSaving ? <Spinner animation="border" size="sm" /> : 'Speichern'}
+            </Button>
+          </div>
+        </Modal.Footer>
+      </Modal>
+
+      {/* ======== DELETE CONFIRMATION MODAL ======== */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
+        <Modal.Body>
+          <div className="ikpd-modal-delete-body">
+            <div className="ikpd-modal-delete-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            </div>
+            <div className="ikpd-modal-delete-title">Termin löschen?</div>
+            <p className="ikpd-modal-delete-text">
+              Termin mit <strong>{deleteEvent?.klientName}</strong> am{' '}
+              {deleteEvent?.start.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })}{' '}
+              wird unwiderruflich gelöscht.
+            </p>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <div className="ikpd-modal-footer-full">
+            <Button variant="light" onClick={() => setShowDeleteModal(false)}>Abbrechen</Button>
+            <Button variant="danger" onClick={handleDeleteTermin} disabled={deleting}>
+              {deleting ? <Spinner animation="border" size="sm" /> : 'Löschen'}
+            </Button>
+          </div>
+        </Modal.Footer>
       </Modal>
 
       {/* ======== CREATE MODAL ======== */}
@@ -560,7 +811,7 @@ const Kalender = () => {
         <Modal.Footer>
           <div className="ikpd-modal-footer-full">
             <Button variant="light" onClick={() => setShowModal(false)}>Abbrechen</Button>
-            <Button variant="primary" onClick={handleCreateTermin}>Termin erstellen</Button>
+            <Button variant="primary" onClick={handleCreateTermin} disabled={saving}>{saving ? 'Erstelle...' : 'Termin erstellen'}</Button>
           </div>
         </Modal.Footer>
       </Modal>

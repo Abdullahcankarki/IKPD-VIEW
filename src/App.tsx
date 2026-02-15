@@ -12,7 +12,13 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import PraxisPage from './pages/PraxisPage';
 import RechnungenPage from './pages/RechnungenPage';
 import ProfilPage from './pages/ProfilPage';
+import KlientDetailPage from './pages/KlientDetailPage';
+import AuftraggeberDetailPage from './pages/AuftraggeberDetailPage';
 import ErrorBoundary from './components/ErrorBoundary';
+import TerminStornoPage from './pages/TerminStornoPage';
+import EmailLogPage from './pages/EmailLogPage';
+import PasswortVergessenPage from './pages/PasswortVergessenPage';
+import PasswortResetPage from './pages/PasswortResetPage';
 import logo from './logo-ikpd.png';
 
 function RequireAuth({ children }: { children: JSX.Element }) {
@@ -70,6 +76,11 @@ const IconBuilding = () => (
     <rect x="4" y="2" width="16" height="20" rx="2" /><path d="M9 22v-4h6v4" /><path d="M8 6h.01" /><path d="M16 6h.01" /><path d="M8 10h.01" /><path d="M16 10h.01" /><path d="M8 14h.01" /><path d="M16 14h.01" />
   </svg>
 );
+const IconMail = () => (
+  <svg className="ikpd-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+  </svg>
+);
 const IconLogout = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
@@ -106,6 +117,7 @@ const navItems = [
   { path: '/rechnungen', label: 'Rechnungen', icon: IconReceipt },
   { path: '/therapeuten', label: 'Therapeuten', icon: IconStethoscope, section: 'Praxis' },
   { path: '/praxis', label: 'Praxis', icon: IconBuilding },
+  { path: '/email-log', label: 'E-Mail-Log', icon: IconMail },
 ];
 
 /* Bottom bar: show first 4 items as tabs, rest in "More" popup */
@@ -119,14 +131,21 @@ const Sidebar = () => {
   const [moreOpen, setMoreOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  if (location.pathname === '/login') return null;
+  const isPublic = location.pathname === '/login'
+    || location.pathname === '/passwort-vergessen'
+    || location.pathname.startsWith('/passwort-reset/')
+    || location.pathname.startsWith('/termin/storno/');
+  if (isPublic) return null;
 
   const rolleLabel = user?.rolle === 'admin' ? 'Administrator' : 'Therapeut';
   const initials = user?.rolle === 'admin' ? 'AD' : 'TH';
 
   const closeMore = () => setMoreOpen(false);
-  const isMoreActive = bottomBarMoreItems.some(i => location.pathname === i.path)
-    || location.pathname === '/profil';
+  const isActive = (path: string) =>
+    path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
+
+  const isMoreActive = bottomBarMoreItems.some(i => isActive(i.path))
+    || location.pathname.startsWith('/profil');
 
   /* ---- MOBILE: topbar + bottom tabs ---- */
   if (isMobile) {
@@ -146,7 +165,7 @@ const Sidebar = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`ikpd-bottombar-link${location.pathname === item.path ? ' active' : ''}`}
+                className={`ikpd-bottombar-link${isActive(item.path) ? ' active' : ''}`}
               >
                 <item.icon />
                 {item.label}
@@ -163,7 +182,7 @@ const Sidebar = () => {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`ikpd-bottombar-popup-link${location.pathname === item.path ? ' active' : ''}`}
+                    className={`ikpd-bottombar-popup-link${isActive(item.path) ? ' active' : ''}`}
                     onClick={closeMore}
                   >
                     <item.icon />
@@ -213,7 +232,7 @@ const Sidebar = () => {
             )}
             <Link
               to={item.path}
-              className={`ikpd-sidebar-link${location.pathname === item.path ? ' active' : ''}`}
+              className={`ikpd-sidebar-link${isActive(item.path) ? ' active' : ''}`}
             >
               <item.icon />
               {item.label}
@@ -252,7 +271,11 @@ const Sidebar = () => {
 
 function AppContent() {
   const location = useLocation();
-  const isLogin = location.pathname === '/login';
+  const isPublicPage = location.pathname === '/login'
+    || location.pathname === '/passwort-vergessen'
+    || location.pathname.startsWith('/passwort-reset/')
+    || location.pathname.startsWith('/termin/storno/');
+  const isLogin = isPublicPage;
   const isMobile = useIsMobile();
 
   return (
@@ -261,13 +284,19 @@ function AppContent() {
       <main className={isLogin ? '' : `ikpd-main ${isMobile ? 'ikpd-main--mobile' : 'ikpd-main--with-sidebar'}`}>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/termin/storno/:token" element={<TerminStornoPage />} />
+          <Route path="/passwort-vergessen" element={<PasswortVergessenPage />} />
+          <Route path="/passwort-reset/:token" element={<PasswortResetPage />} />
           <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
           <Route path="/kalender" element={<RequireAuth><Kalender /></RequireAuth>} />
           <Route path="/therapeuten" element={<RequireAuth><TherapeutenPage /></RequireAuth>} />
           <Route path="/klienten" element={<RequireAuth><KlientenPage /></RequireAuth>} />
+          <Route path="/klienten/:id" element={<RequireAuth><KlientDetailPage /></RequireAuth>} />
           <Route path="/auftraggeber" element={<RequireAuth><AuftraggeberComponent /></RequireAuth>} />
+          <Route path="/auftraggeber/:id" element={<RequireAuth><AuftraggeberDetailPage /></RequireAuth>} />
           <Route path="/praxis" element={<RequireAuth><PraxisPage /></RequireAuth>} />
           <Route path="/rechnungen" element={<RequireAuth><RechnungenPage /></RequireAuth>} />
+          <Route path="/email-log" element={<RequireAuth><EmailLogPage /></RequireAuth>} />
           <Route path="/profil" element={<RequireAuth><ProfilPage /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

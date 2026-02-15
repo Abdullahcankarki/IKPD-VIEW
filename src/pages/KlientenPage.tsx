@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Button,
   Modal,
@@ -38,6 +39,7 @@ const emptyKlient: KlientResource = {
 const initialKontaktperson = { name: "", email: "" };
 
 const KlientenPage = () => {
+  const navigate = useNavigate();
   const [klienten, setKlienten] = useState<KlientResource[]>([]);
   const [search, setSearch] = useState("");
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: "asc" | "desc" } | null>(null);
@@ -49,6 +51,7 @@ const KlientenPage = () => {
   const [deleteTarget, setDeleteTarget] = useState<KlientResource | null>(null);
   const [toast, setToast] = useState<ToastType>({ show: false, message: "", variant: "success" });
   const [validated, setValidated] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [praxen, setPraxen] = useState<PraxisResource[]>([]);
   const [auftraggeber, setAuftraggeber] = useState<AuftraggeberResource[]>([]);
@@ -132,6 +135,7 @@ const KlientenPage = () => {
 
   const handleModalSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return;
     setValidated(true);
     if (!validateSelected(selected)) {
       showToast("Bitte alle Pflichtfelder korrekt ausfüllen.", "danger");
@@ -162,7 +166,8 @@ const KlientenPage = () => {
   };
 
   const handleDeleteConfirmed = async () => {
-    if (!deleteTarget) return;
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
     try {
       await deleteKlient(deleteTarget._id);
       showToast("Klient gelöscht.", "success");
@@ -170,6 +175,7 @@ const KlientenPage = () => {
     } catch {
       showToast("Fehler beim Löschen.", "danger");
     } finally {
+      setDeleting(false);
       setShowDeleteModal(false);
       setDeleteTarget(null);
     }
@@ -265,7 +271,10 @@ const KlientenPage = () => {
                   <div className="ikpd-list-item-avatar">{initials}</div>
                   <div className="ikpd-list-item-content">
                     <div className="ikpd-list-item-primary">
-                      <span className="ikpd-list-item-name">{k.name}</span>
+                      <span
+                        className="ikpd-list-item-name ikpd-list-item-link"
+                        onClick={(e) => { e.stopPropagation(); navigate(`/klienten/${k._id}`); }}
+                      >{k.name}</span>
                       {k.geburtsdatum && (
                         <Badge bg="light" text="dark" className="fw-normal">
                           {k.geburtsdatum.slice(0, 10)}
@@ -575,7 +584,7 @@ const KlientenPage = () => {
         <Modal.Footer>
           <div className="ikpd-modal-footer-full">
             <Button variant="light" onClick={() => setShowDeleteModal(false)}>Abbrechen</Button>
-            <Button variant="danger" onClick={handleDeleteConfirmed}>Löschen</Button>
+            <Button variant="danger" onClick={handleDeleteConfirmed} disabled={deleting}>{deleting ? <Spinner animation="border" size="sm" /> : "Löschen"}</Button>
           </div>
         </Modal.Footer>
       </Modal>

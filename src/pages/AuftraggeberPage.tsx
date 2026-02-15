@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Button,
   Modal,
@@ -43,6 +44,7 @@ const initialForm: AuftraggeberResource = {
 };
 
 const AuftraggeberComponent = () => {
+  const navigate = useNavigate();
   const [auftraggeber, setAuftraggeber] = useState<AuftraggeberResource[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState<AuftraggeberResource>(initialForm);
@@ -57,6 +59,8 @@ const AuftraggeberComponent = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'institution' | 'email' | ''>('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (showModal) {
@@ -105,6 +109,7 @@ const AuftraggeberComponent = () => {
   }, []);
 
   const handleSubmit = async () => {
+    if (saving) return;
     const errors: { [key: string]: string } = {};
     if (!formData.name) errors.name = 'Name ist erforderlich';
     if (!formData.institution) errors.institution = 'Institution ist erforderlich';
@@ -116,6 +121,7 @@ const AuftraggeberComponent = () => {
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
+    setSaving(true);
     try {
       if (isEditing) {
         const updated = await updateAuftraggeber(formData, formData._id);
@@ -129,6 +135,8 @@ const AuftraggeberComponent = () => {
       setShowModal(false);
     } catch (error) {
       console.error('Fehler beim Speichern:', error);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -138,7 +146,8 @@ const AuftraggeberComponent = () => {
   };
 
   const confirmDelete = async () => {
-    if (!pendingDeleteId) return;
+    if (!pendingDeleteId || deleting) return;
+    setDeleting(true);
     try {
       await deleteAuftraggeber(pendingDeleteId);
       setAuftraggeber((prev) => prev.filter((a) => a._id !== pendingDeleteId));
@@ -153,6 +162,7 @@ const AuftraggeberComponent = () => {
     } catch (error) {
       console.error('Fehler beim Löschen:', error);
     } finally {
+      setDeleting(false);
       setShowDeleteModal(false);
       setPendingDeleteId(null);
     }
@@ -226,7 +236,10 @@ const AuftraggeberComponent = () => {
                   <div className="ikpd-list-item-avatar blue">{initials}</div>
                   <div className="ikpd-list-item-content">
                     <div className="ikpd-list-item-primary">
-                      <span className="ikpd-list-item-name">{a.name}</span>
+                      <span
+                        className="ikpd-list-item-name ikpd-list-item-link"
+                        onClick={(e) => { e.stopPropagation(); navigate(`/auftraggeber/${a._id}`); }}
+                      >{a.name}</span>
                       <Badge bg="light" text="dark" className="fw-normal">{a.institution}</Badge>
                     </div>
                     <div className="ikpd-list-item-secondary">
@@ -394,7 +407,7 @@ const AuftraggeberComponent = () => {
         <Modal.Footer>
           <div className="ikpd-modal-footer-full">
             <Button variant="light" onClick={() => setShowModal(false)}>Abbrechen</Button>
-            <Button variant="primary" onClick={handleSubmit}>{isEditing ? 'Speichern' : 'Anlegen'}</Button>
+            <Button variant="primary" onClick={handleSubmit} disabled={saving}>{saving ? 'Speichere...' : (isEditing ? 'Speichern' : 'Anlegen')}</Button>
           </div>
         </Modal.Footer>
       </Modal>
@@ -412,7 +425,7 @@ const AuftraggeberComponent = () => {
         <Modal.Footer>
           <div className="ikpd-modal-footer-full">
             <Button variant="light" onClick={() => setShowDeleteModal(false)}>Abbrechen</Button>
-            <Button variant="danger" onClick={confirmDelete}>Löschen</Button>
+            <Button variant="danger" onClick={confirmDelete} disabled={deleting}>{deleting ? 'Lösche...' : 'Löschen'}</Button>
           </div>
         </Modal.Footer>
       </Modal>

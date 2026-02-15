@@ -1,4 +1,4 @@
-import { AuftraggeberResource, KlientResource, TerminResource, TherapeutResource, PraxisResource, RechnungResource } from "../Resources";
+import { AuftraggeberResource, KlientResource, TerminResource, TherapeutResource, PraxisResource, RechnungResource, StornoInfo, EmailLogResource } from "../Resources";
 
 const API_URL = process.env.REACT_APP_API_SERVER_URL || "";
 
@@ -50,6 +50,7 @@ interface CreateTerminPayload {
   datum: string;
   dauer: number;
   beschreibung?: string;
+  stundensatz?: number;
   klientId: string;
   status?: 'geplant' | 'abgeschlossen' | 'abgesagt';
 }
@@ -66,6 +67,31 @@ export async function createTermin(terminData: CreateTerminPayload): Promise<any
     throw new Error(errorData.message || 'Termin konnte nicht erstellt werden');
   }
 
+  return await response.json();
+}
+
+export async function updateTermin(id: string, terminData: Partial<CreateTerminPayload>): Promise<any> {
+  const response = await fetch(`${API_URL}/api/termine/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(terminData),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Termin konnte nicht aktualisiert werden');
+  }
+  return await response.json();
+}
+
+export async function deleteTermin(id: string): Promise<any> {
+  const response = await fetch(`${API_URL}/api/termine/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Termin konnte nicht gelöscht werden');
+  }
   return await response.json();
 }
 
@@ -127,6 +153,18 @@ export async function deleteKlient(id: string): Promise<any> {
   return await response.json();
 }
 
+export async function fetchKlient(id: string): Promise<KlientResource> {
+  const response = await fetch(`${API_URL}/api/klienten/${id}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Klient konnte nicht geladen werden');
+  }
+  return await response.json();
+}
+
 export async function fetchAlleAuftraggeber(): Promise<AuftraggeberResource[]> {
   const response = await fetch(`${API_URL}/api/auftraggeber/`, {
     method: 'GET',
@@ -182,6 +220,18 @@ export async function deleteAuftraggeber(id: string): Promise<any> {
     throw new Error(errorData.message || 'Auftraggeber konnte nicht gelöscht werden');
   }
 
+  return await response.json();
+}
+
+export async function fetchAuftraggeber(id: string): Promise<AuftraggeberResource> {
+  const response = await fetch(`${API_URL}/api/auftraggeber/${id}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Auftraggeber konnte nicht geladen werden');
+  }
   return await response.json();
 }
 
@@ -357,6 +407,18 @@ export async function deleteRechnung(id: string): Promise<any> {
   return await response.json();
 }
 
+export async function fetchRechnungenVonKlient(klientId: string): Promise<RechnungResource[]> {
+  const response = await fetch(`${API_URL}/api/rechnungen/von-klient/${klientId}`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Rechnungen konnten nicht geladen werden');
+  }
+  return await response.json();
+}
+
 export function getRechnungPdfUrl(id: string): string {
   return `${API_URL}/api/rechnungen/${id}/pdf`;
 }
@@ -396,6 +458,96 @@ export async function updateMeinPasswort(oldPassword: string, newPassword: strin
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.message || 'Passwort konnte nicht geändert werden');
+  }
+  return await response.json();
+}
+
+// Storno-Funktionen (öffentlich, kein Auth-Header)
+export async function fetchStornoInfo(token: string): Promise<StornoInfo> {
+  const response = await fetch(`${API_URL}/api/storno/${token}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Storno-Info konnte nicht geladen werden');
+  }
+  return await response.json();
+}
+
+export async function executeStorno(token: string): Promise<{ message: string }> {
+  const response = await fetch(`${API_URL}/api/storno/${token}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Stornierung fehlgeschlagen');
+  }
+  return await response.json();
+}
+
+// Passwort-Reset-Funktionen (öffentlich, kein Auth-Header)
+export async function requestPasswordReset(email: string): Promise<{ message: string }> {
+  const response = await fetch(`${API_URL}/api/passwort-reset/request`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Anfrage fehlgeschlagen');
+  }
+  return await response.json();
+}
+
+export async function validateResetToken(token: string): Promise<{ valid: boolean }> {
+  const response = await fetch(`${API_URL}/api/passwort-reset/validate/${token}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Token ungültig');
+  }
+  return await response.json();
+}
+
+export async function executePasswordReset(token: string, password: string): Promise<{ message: string }> {
+  const response = await fetch(`${API_URL}/api/passwort-reset/reset/${token}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Passwort konnte nicht geändert werden');
+  }
+  return await response.json();
+}
+
+// Rechnung per E-Mail senden
+export async function sendRechnungPerEmail(id: string): Promise<{ message: string }> {
+  const response = await fetch(`${API_URL}/api/rechnungen/${id}/email`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Rechnung konnte nicht gesendet werden');
+  }
+  return await response.json();
+}
+
+// E-Mail-Log-Funktionen
+export async function fetchEmailLogs(): Promise<EmailLogResource[]> {
+  const response = await fetch(`${API_URL}/api/email-logs/`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'E-Mail-Logs konnten nicht geladen werden');
   }
   return await response.json();
 }

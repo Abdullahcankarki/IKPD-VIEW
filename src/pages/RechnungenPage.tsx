@@ -15,6 +15,7 @@ import {
   deleteRechnung,
   getRechnungPdfUrl,
   fetchAlleKlienten,
+  sendRechnungPerEmail,
 } from "../services/api";
 import { RechnungResource, KlientResource } from "../Resources";
 
@@ -45,7 +46,12 @@ const RechnungenPage: React.FC = () => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailRechnung, setDetailRechnung] = useState<RechnungResource | null>(null);
 
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailTarget, setEmailTarget] = useState<RechnungResource | null>(null);
+  const [sending, setSending] = useState(false);
+
   const [toast, setToast] = useState<ToastType>({ show: false, message: "", variant: "success" });
+  const [deleting, setDeleting] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -87,6 +93,7 @@ const RechnungenPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (saving) return;
     setValidated(true);
     if (!formData.klientId || !formData.artDerMassnahme) return;
 
@@ -116,7 +123,8 @@ const RechnungenPage: React.FC = () => {
   };
 
   const handleDeleteConfirmed = async () => {
-    if (!deleteTarget) return;
+    if (!deleteTarget || deleting) return;
+    setDeleting(true);
     try {
       await deleteRechnung(deleteTarget._id);
       showToast("Rechnung gelöscht.", "success");
@@ -124,6 +132,7 @@ const RechnungenPage: React.FC = () => {
     } catch {
       showToast("Fehler beim Löschen.", "danger");
     } finally {
+      setDeleting(false);
       setShowDeleteModal(false);
       setDeleteTarget(null);
     }
@@ -148,6 +157,26 @@ const RechnungenPage: React.FC = () => {
         window.URL.revokeObjectURL(blobUrl);
       })
       .catch(() => showToast("Fehler beim PDF-Download.", "danger"));
+  };
+
+  const handleEmailClick = (rechnung: RechnungResource) => {
+    setEmailTarget(rechnung);
+    setShowEmailModal(true);
+  };
+
+  const handleEmailConfirmed = async () => {
+    if (!emailTarget || sending) return;
+    setSending(true);
+    try {
+      const result = await sendRechnungPerEmail(emailTarget._id);
+      showToast(result.message, "success");
+    } catch (err: any) {
+      showToast(err.message || "Fehler beim Senden.", "danger");
+    } finally {
+      setSending(false);
+      setShowEmailModal(false);
+      setEmailTarget(null);
+    }
   };
 
   const handleShowDetail = (rechnung: RechnungResource) => {
@@ -274,6 +303,9 @@ const RechnungenPage: React.FC = () => {
                         </Button>
                         <Button variant="outline-success" size="sm" onClick={() => handleDownloadPdf(r)} title="PDF herunterladen">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </Button>
+                        <Button variant="outline-info" size="sm" onClick={() => handleEmailClick(r)} title="Per E-Mail senden">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                         </Button>
                         <Button variant="outline-danger" size="sm" onClick={() => handleDeleteClick(r)} title="Löschen">
                           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
@@ -542,7 +574,36 @@ const RechnungenPage: React.FC = () => {
         <Modal.Footer>
           <div className="ikpd-modal-footer-full">
             <Button variant="light" onClick={() => setShowDeleteModal(false)}>Abbrechen</Button>
-            <Button variant="danger" onClick={handleDeleteConfirmed}>Löschen</Button>
+            <Button variant="danger" onClick={handleDeleteConfirmed} disabled={deleting}>{deleting ? <Spinner animation="border" size="sm" /> : "Löschen"}</Button>
+          </div>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Email Send Confirmation Modal */}
+      <Modal show={showEmailModal} onHide={() => setShowEmailModal(false)} centered size="sm">
+        <Modal.Body>
+          <div className="ikpd-modal-delete-body">
+            <div className="ikpd-modal-delete-icon" style={{ background: '#cfe2ff', color: '#0d6efd' }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            </div>
+            <div className="ikpd-modal-delete-title">Rechnung per E-Mail senden?</div>
+            <p className="ikpd-modal-delete-text">
+              <strong>{emailTarget?.rechnungsnummer}</strong> wird als PDF an{' '}
+              <strong>
+                {emailTarget?.empfaenger === 'auftraggeber'
+                  ? emailTarget?.auftraggeberName
+                  : emailTarget?.klientName}
+              </strong>{' '}
+              ({emailTarget?.empfaenger === 'auftraggeber' ? 'Auftraggeber' : 'Klient'}) gesendet.
+            </p>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <div className="ikpd-modal-footer-full">
+            <Button variant="light" onClick={() => setShowEmailModal(false)}>Abbrechen</Button>
+            <Button variant="primary" onClick={handleEmailConfirmed} disabled={sending}>
+              {sending ? <Spinner animation="border" size="sm" /> : "Senden"}
+            </Button>
           </div>
         </Modal.Footer>
       </Modal>
