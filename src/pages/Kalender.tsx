@@ -1,5 +1,5 @@
 import { Modal, Button, Form, Spinner } from 'react-bootstrap';
-import { fetchAlleKlienten, createTermin, updateTermin, deleteTermin, fetchMeineTermine } from '../services/api';
+import { fetchAlleKlienten, createTermin, updateTermin, deleteTermin, fetchMeineTermine, sendTerminEmailSofort, sendTerminEmailArbeitszeit } from '../services/api';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 
@@ -74,6 +74,11 @@ const Kalender = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [startTime, setStartTime] = useState('09:00');
   const [saving, setSaving] = useState(false);
+
+  // E-Mail Modal
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [emailTerminId, setEmailTerminId] = useState<string | null>(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   // Detail popup
   const [selectedEvent, setSelectedEvent] = useState<TerminEvent | null>(null);
@@ -223,7 +228,7 @@ const Kalender = () => {
       const datum = new Date(selectedSlot);
       datum.setHours(h, m, 0, 0);
 
-      await createTermin({
+      const neuerTermin = await createTermin({
         datum: datum.toISOString(),
         dauer: dauerStunden * 60 + dauerMinuten,
         beschreibung,
@@ -231,11 +236,36 @@ const Kalender = () => {
       });
       setShowModal(false);
       await loadTermine();
+      // E-Mail-Modal anzeigen
+      setEmailTerminId(neuerTermin._id);
+      setShowEmailModal(true);
     } catch {
       setErrorMessage('Der Termin konnte nicht erstellt werden.');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleEmailSofort = async () => {
+    if (!emailTerminId || sendingEmail) return;
+    setSendingEmail(true);
+    try {
+      await sendTerminEmailSofort(emailTerminId);
+    } catch { /* ignore */ }
+    setSendingEmail(false);
+    setShowEmailModal(false);
+    setEmailTerminId(null);
+  };
+
+  const handleEmailArbeitszeit = async () => {
+    if (!emailTerminId || sendingEmail) return;
+    setSendingEmail(true);
+    try {
+      await sendTerminEmailArbeitszeit(emailTerminId);
+    } catch { /* ignore */ }
+    setSendingEmail(false);
+    setShowEmailModal(false);
+    setEmailTerminId(null);
   };
 
   /* ---- Edit handler ---- */
@@ -812,6 +842,32 @@ const Kalender = () => {
           <div className="ikpd-modal-footer-full">
             <Button variant="light" onClick={() => setShowModal(false)}>Abbrechen</Button>
             <Button variant="primary" onClick={handleCreateTermin} disabled={saving}>{saving ? 'Erstelle...' : 'Termin erstellen'}</Button>
+          </div>
+        </Modal.Footer>
+      </Modal>
+
+      {/* E-Mail Bestätigung Modal */}
+      <Modal show={showEmailModal} onHide={() => { setShowEmailModal(false); setEmailTerminId(null); }} centered size="sm">
+        <Modal.Body>
+          <div style={{ textAlign: 'center', padding: '1rem 0' }}>
+            <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0284c7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            </div>
+            <div style={{ fontWeight: 600, fontSize: '1.1rem', marginBottom: '0.5rem' }}>Terminbestätigung senden?</div>
+            <p style={{ color: '#666', fontSize: '0.9rem', margin: 0 }}>Wann soll die E-Mail an den Klienten gesendet werden?</p>
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
+            <Button variant="primary" onClick={handleEmailSofort} disabled={sendingEmail}>
+              {sendingEmail ? <Spinner animation="border" size="sm" /> : 'Jetzt senden'}
+            </Button>
+            <Button variant="outline-primary" onClick={handleEmailArbeitszeit} disabled={sendingEmail}>
+              Während Arbeitszeit senden (Mo–Fr, 08–17 Uhr)
+            </Button>
+            <Button variant="light" onClick={() => { setShowEmailModal(false); setEmailTerminId(null); }}>
+              Nicht senden
+            </Button>
           </div>
         </Modal.Footer>
       </Modal>

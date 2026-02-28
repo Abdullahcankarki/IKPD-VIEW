@@ -226,10 +226,12 @@ export default function KlientDetailPage() {
                 <span className="ikpd-detail-field-value">{klient.telefonnummer}</span>
               </div>
             )}
-            {klient.adresse && (
+            {(klient.strasse || klient.ort) && (
               <div className="ikpd-detail-field">
                 <span className="ikpd-detail-field-label">Adresse</span>
-                <span className="ikpd-detail-field-value">{klient.adresse}</span>
+                <span className="ikpd-detail-field-value">
+                  {[klient.strasse, klient.hausnummer].filter(Boolean).join(' ')}{klient.strasse && klient.plz ? ', ' : ''}{[klient.plz, klient.ort].filter(Boolean).join(' ')}
+                </span>
               </div>
             )}
             {klient.kontaktperson?.name && (

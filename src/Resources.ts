@@ -18,9 +18,14 @@ export interface KlientResource {
   _id: string;
   name: string;
   geburtsdatum: string;
+  strasse?: string;
+  hausnummer?: string;
+  plz?: string;
+  ort?: string;
   adresse?: string;
   telefonnummer?: string;
   email?: string;
+  steuerbefreiung?: string;
   kontaktperson?: {
     name?: string;
     email?: string;

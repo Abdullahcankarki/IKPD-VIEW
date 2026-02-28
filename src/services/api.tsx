@@ -70,6 +70,30 @@ export async function createTermin(terminData: CreateTerminPayload): Promise<any
   return await response.json();
 }
 
+export async function sendTerminEmailSofort(id: string): Promise<{ message: string }> {
+  const response = await fetch(`${API_URL}/api/termine/${id}/email-sofort`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'E-Mail konnte nicht gesendet werden');
+  }
+  return await response.json();
+}
+
+export async function sendTerminEmailArbeitszeit(id: string): Promise<{ message: string }> {
+  const response = await fetch(`${API_URL}/api/termine/${id}/email-arbeitszeit`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'E-Mail konnte nicht eingereiht werden');
+  }
+  return await response.json();
+}
+
 export async function updateTermin(id: string, terminData: Partial<CreateTerminPayload>): Promise<any> {
   const response = await fetch(`${API_URL}/api/termine/${id}`, {
     method: 'PUT',

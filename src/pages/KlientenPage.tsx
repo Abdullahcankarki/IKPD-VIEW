@@ -27,6 +27,10 @@ const emptyKlient: KlientResource = {
   _id: "",
   name: "",
   geburtsdatum: "",
+  strasse: "",
+  hausnummer: "",
+  plz: "",
+  ort: "",
   adresse: "",
   email: "",
   telefonnummer: "",
@@ -194,7 +198,7 @@ const KlientenPage = () => {
 
   // Validation
   function validateSelected(k: KlientResource) {
-    if (!k.name || !k.geburtsdatum || !k.adresse || !k.email || !k.telefonnummer) return false;
+    if (!k.name || !k.geburtsdatum || !k.email || !k.telefonnummer) return false;
     if (!/^[\w.-]+@[\w.-]+\.[A-Za-z]{2,}$/.test(k.email)) return false;
     return true;
   }
@@ -308,10 +312,14 @@ const KlientenPage = () => {
                 </div>
                 <div className="ikpd-list-item-details">
                   <div className="ikpd-list-item-details-inner">
-                    <div className="ikpd-detail-field">
-                      <span className="ikpd-detail-label">Adresse</span>
-                      <span className="ikpd-detail-value">{k.adresse}</span>
-                    </div>
+                    {(k.strasse || k.ort) && (
+                      <div className="ikpd-detail-field">
+                        <span className="ikpd-detail-label">Adresse</span>
+                        <span className="ikpd-detail-value">
+                          {[k.strasse, k.hausnummer].filter(Boolean).join(' ')}{k.strasse && k.plz ? ', ' : ''}{[k.plz, k.ort].filter(Boolean).join(' ')}
+                        </span>
+                      </div>
+                    )}
                     <div className="ikpd-detail-field">
                       <span className="ikpd-detail-label">Praxis</span>
                       <span className="ikpd-detail-value">{getPraxisName(k.praxisId)}</span>
@@ -389,19 +397,54 @@ const KlientenPage = () => {
                     Geburtsdatum ist erforderlich.
                   </Form.Control.Feedback>
                 </Form.Group>
-                <Form.Group className="mb-3" controlId="formAdresse">
-                  <Form.Label>Adresse</Form.Label>
-                  <Form.Control
-                    required
-                    type="text"
-                    placeholder="Musterstraße 1, 12345 Musterstadt"
-                    value={selected.adresse}
-                    onChange={(e) => handleChange("adresse", e.target.value)}
-                  />
-                  <Form.Control.Feedback type="invalid">
-                    Adresse ist erforderlich.
-                  </Form.Control.Feedback>
-                </Form.Group>
+                <Row>
+                  <Col md={8}>
+                    <Form.Group className="mb-3" controlId="formStrasse">
+                      <Form.Label>Straße</Form.Label>
+                      <Form.Control
+                        type="text"
+                        placeholder="Musterstraße"
+                        value={selected.strasse || ""}
+                        onChange={(e) => handleChange("strasse", e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
+                    <Form.Group className="mb-3" controlId="formHausnummer">
+                      <Form.Label>Hausnr.</Form.Label>
+                      <Form.Control
+                        type="text"
+                        placeholder="1a"
+                        value={selected.hausnummer || ""}
+                        onChange={(e) => handleChange("hausnummer", e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col md={4}>
+                    <Form.Group className="mb-3" controlId="formPlz">
+                      <Form.Label>PLZ</Form.Label>
+                      <Form.Control
+                        type="text"
+                        placeholder="12345"
+                        value={selected.plz || ""}
+                        onChange={(e) => handleChange("plz", e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={8}>
+                    <Form.Group className="mb-3" controlId="formOrt">
+                      <Form.Label>Ort</Form.Label>
+                      <Form.Control
+                        type="text"
+                        placeholder="Musterstadt"
+                        value={selected.ort || ""}
+                        onChange={(e) => handleChange("ort", e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3" controlId="formEmail">
@@ -455,6 +498,26 @@ const KlientenPage = () => {
                   <Form.Control.Feedback type="invalid">
                     Telefonnummer ist erforderlich.
                   </Form.Control.Feedback>
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <div className="ikpd-modal-section-title mt-3">Steuerbefreiung</div>
+            <Row className="gy-3">
+              <Col md={12}>
+                <Form.Group className="mb-3" controlId="formSteuerbefreiung">
+                  <Form.Label>USt.-Paragraph</Form.Label>
+                  <Form.Select
+                    value={selected.steuerbefreiung || ""}
+                    onChange={(e) => handleChange("steuerbefreiung", e.target.value)}
+                  >
+                    <option value="">Bitte wählen</option>
+                    <option value="Gemäß § 19 Abs. 1 UStG wird keine Umsatzsteuer berechnet (Kleinunternehmerregelung).">§ 19 Abs. 1 UStG – Kleinunternehmerregelung</option>
+                    <option value="Gemäß § 4 Nr. 14 Buchst. a UStG sind die in Rechnung gestellten heilkundlichen Leistungen von der Umsatzsteuer befreit.">§ 4 Nr. 14a UStG – Heilkundliche Leistungen</option>
+                    <option value="Gemäß § 4 Nr. 21 UStG sind die in Rechnung gestellten Ausbildungsleistungen von der Umsatzsteuer befreit.">§ 4 Nr. 21 UStG – Ausbildungsleistungen</option>
+                    <option value="Gemäß § 4 Nr. 16 UStG sind die in Rechnung gestellten Leistungen von der Umsatzsteuer befreit.">§ 4 Nr. 16 UStG – Soziale Leistungen</option>
+                    <option value="Gemäß § 4 Nr. 25 UStG sind die in Rechnung gestellten Leistungen von der Umsatzsteuer befreit.">§ 4 Nr. 25 UStG – Jugendhilfe</option>
+                  </Form.Select>
                 </Form.Group>
               </Col>
             </Row>
