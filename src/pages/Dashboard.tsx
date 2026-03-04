@@ -113,7 +113,7 @@ const Dashboard: React.FC = () => {
         <div>
           <h2 className="ikpd-dash-title">Dashboard</h2>
           <p className="ikpd-dash-subtitle">
-            Willkommen, {user?.rolle === 'admin' ? 'Administrator' : 'Therapeut'} &mdash; {monateLang[currentMonth - 1]} {currentYear}
+            Willkommen, {user?.rolle || 'Therapeut'} &mdash; {monateLang[currentMonth - 1]} {currentYear}
           </p>
         </div>
       </div>

@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { LoginPayload } from '../Resources'; // Anpassung je nach Pfad
+import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { LoginPayload } from '../Resources';
+import { fetchMyPermissions } from '../services/api';
 
 interface AuthContextType {
   user: LoginPayload | null;
@@ -8,6 +9,8 @@ interface AuthContextType {
   logout: () => void;
   isAdmin: boolean;
   loading: boolean;
+  permissions: string[];
+  hasPermission: (permission: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,16 +19,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<LoginPayload | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [permissions, setPermissions] = useState<string[]>([]);
+
+  const isAdmin = user?.rolle === 'admin';
+
+  const loadPermissions = useCallback(async () => {
+    try {
+      const perms = await fetchMyPermissions();
+      setPermissions(perms);
+      localStorage.setItem('permissions', JSON.stringify(perms));
+    } catch {
+      setPermissions([]);
+    }
+  }, []);
 
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
+    const storedPermissions = localStorage.getItem('permissions');
     if (storedToken && storedUser) {
       setToken(storedToken);
       setUser(JSON.parse(storedUser));
+      if (storedPermissions) {
+        setPermissions(JSON.parse(storedPermissions));
+      }
     }
-    setLoading(false); // Hinzugefügt
+    setLoading(false);
   }, []);
+
+  // Permissions nachladen wenn User eingeloggt
+  useEffect(() => {
+    if (token && user) {
+      loadPermissions();
+    }
+  }, [token, user, loadPermissions]);
 
   const login = (newToken: string) => {
     const payload = parseJwt(newToken);
@@ -38,13 +65,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     setToken(null);
+    setPermissions([]);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('permissions');
   };
 
-  const parseJwt = (token: string): LoginPayload => {
+  const parseJwt = (tkn: string): LoginPayload => {
     try {
-      const base64Url = token.split('.')[1];
+      const base64Url = tkn.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const jsonPayload = decodeURIComponent(
         atob(base64)
@@ -55,14 +84,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return JSON.parse(jsonPayload);
     } catch (error) {
       console.error('Fehler beim Parsen des Tokens:', error);
-      return { _id: '', rolle: 'therapeut', praxisId: '' };
+      return { _id: '', rolle: 'Therapeut', praxisId: '' };
     }
   };
 
-  const isAdmin = user?.rolle === 'admin';
+  const hasPermission = useCallback((permission: string): boolean => {
+    if (isAdmin) return true;
+    return permissions.includes(permission);
+  }, [isAdmin, permissions]);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAdmin, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isAdmin, loading, permissions, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );

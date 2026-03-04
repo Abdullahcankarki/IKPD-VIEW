@@ -144,8 +144,8 @@ const ProfilPage: React.FC = () => {
             <h4 className="ikpd-profil-name">
               {profil?.vorname} {profil?.nachname}
             </h4>
-            <Badge bg={profil?.rolle === "admin" ? "primary" : "secondary"} className="mb-4">
-              {profil?.rolle === "admin" ? "Administrator" : "Therapeut"}
+            <Badge bg={profil?.rolle?.toLowerCase() === "admin" ? "primary" : "secondary"} className="mb-4">
+              {profil?.rolle || 'Therapeut'}
             </Badge>
 
             <div className="ikpd-profil-info-list">

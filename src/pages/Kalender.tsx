@@ -57,7 +57,8 @@ interface TerminEvent {
 type ViewMode = 'month' | 'week' | 'day';
 
 const Kalender = () => {
-  const { isAdmin } = useAuth();
+  const { hasPermission } = useAuth();
+  const canEditStundensatz = hasPermission('stundensatz:edit');
   const [events, setEvents] = useState<TerminEvent[]>([]);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<ViewMode>('month');
@@ -303,7 +304,7 @@ const Kalender = () => {
         klientId: editKlientId,
         status: editStatus as 'geplant' | 'abgeschlossen' | 'abgesagt',
       };
-      if (isAdmin && editStundensatz !== '') {
+      if (canEditStundensatz && editStundensatz !== '') {
         updateData.stundensatz = Number(editStundensatz);
       }
       await updateTermin(editEvent.id, updateData);
@@ -695,7 +696,7 @@ const Kalender = () => {
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Stundensatz (€/Std.)</Form.Label>
-              {isAdmin ? (
+              {canEditStundensatz ? (
                 <Form.Control
                   type="number"
                   step="0.01"

@@ -4335,3 +4335,72 @@ body {
   color: #999;
   margin: 12px 0 0;
 }
+
+/* ==============================================
+   ROLLEN PAGE
+   ============================================== */
+
+.ikpd-rollen-perm-group {
+  background: var(--ikpd-bg);
+  border: 1px solid var(--ikpd-border-light);
+  border-radius: var(--ikpd-radius);
+  padding: 0.875rem 1rem;
+  margin-bottom: 0.625rem;
+  transition: border-color 0.15s ease;
+}
+
+.ikpd-rollen-perm-group:hover {
+  border-color: var(--ikpd-border);
+}
+
+.ikpd-rollen-perm-group .form-check-label strong {
+  font-size: 0.875rem;
+  color: var(--ikpd-text);
+}
+
+.ikpd-rollen-perm-list {
+  margin-left: 1.5rem;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.125rem 1rem;
+}
+
+.ikpd-rollen-perm-list .form-check {
+  margin-bottom: 0.125rem;
+}
+
+.ikpd-rollen-perm-list .form-check-label {
+  font-size: 0.82rem;
+  color: var(--ikpd-text-secondary);
+}
+
+.ikpd-rollen-perm-count {
+  font-size: 0.78rem;
+  color: var(--ikpd-text-muted);
+  margin-top: 0.75rem;
+  padding-top: 0.625rem;
+  border-top: 1px solid var(--ikpd-border-light);
+}
+
+/* ==============================================
+   BETREUT (VORARBEITER) LIST
+   ============================================== */
+
+.ikpd-betreut-list {
+  background: var(--ikpd-bg);
+  border: 1px solid var(--ikpd-border-light);
+  border-radius: var(--ikpd-radius);
+  padding: 0.75rem 1rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ikpd-betreut-list .form-check {
+  margin-bottom: 0.25rem;
+}
+
+.ikpd-betreut-list .form-check-label {
+  font-size: 0.85rem;
+  color: var(--ikpd-text-secondary);
+}

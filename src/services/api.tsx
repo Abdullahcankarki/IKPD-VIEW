@@ -1,4 +1,4 @@
-import { AuftraggeberResource, KlientResource, TerminResource, TherapeutResource, PraxisResource, RechnungResource, StornoInfo, EmailLogResource } from "../Resources";
+import { AuftraggeberResource, KlientResource, TerminResource, TherapeutResource, PraxisResource, RechnungResource, StornoInfo, EmailLogResource, RolleResource, PermissionGroups } from "../Resources";
 
 const API_URL = process.env.REACT_APP_API_SERVER_URL || "";
 
@@ -574,4 +574,77 @@ export async function fetchEmailLogs(): Promise<EmailLogResource[]> {
     throw new Error(errorData.message || 'E-Mail-Logs konnten nicht geladen werden');
   }
   return await response.json();
+}
+
+// Rollen-Funktionen
+export async function fetchAlleRollen(): Promise<RolleResource[]> {
+  const response = await fetch(`${API_URL}/api/rollen/`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Rollen konnten nicht geladen werden');
+  }
+  return await response.json();
+}
+
+export async function createRolle(data: Partial<RolleResource>): Promise<RolleResource> {
+  const response = await fetch(`${API_URL}/api/rollen/`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Rolle konnte nicht erstellt werden');
+  }
+  return await response.json();
+}
+
+export async function updateRolle(id: string, data: Partial<RolleResource>): Promise<RolleResource> {
+  const response = await fetch(`${API_URL}/api/rollen/${id}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Rolle konnte nicht aktualisiert werden');
+  }
+  return await response.json();
+}
+
+export async function deleteRolle(id: string): Promise<{ message: string }> {
+  const response = await fetch(`${API_URL}/api/rollen/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Rolle konnte nicht gelöscht werden');
+  }
+  return await response.json();
+}
+
+export async function fetchPermissionList(): Promise<PermissionGroups> {
+  const response = await fetch(`${API_URL}/api/rollen/permissions`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Berechtigungen konnten nicht geladen werden');
+  }
+  return await response.json();
+}
+
+export async function fetchMyPermissions(): Promise<string[]> {
+  const response = await fetch(`${API_URL}/api/therapeut/me/permissions`, {
+    method: 'GET',
+    headers: getAuthHeaders(),
+  });
+  if (!response.ok) return [];
+  const data = await response.json();
+  return data.permissions || [];
 }

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Button, Modal, Form, Toast, Row, Col, Badge, Spinner } from "react-bootstrap";
-import {fetchAlleTherapeuten, createTherapeut, updateTherapeut, deleteTherapeut, fetchAllePraxen } from "../services/api";
-import { TherapeutResource, PraxisResource } from "../Resources";
+import {fetchAlleTherapeuten, createTherapeut, updateTherapeut, deleteTherapeut, fetchAllePraxen, fetchAlleRollen } from "../services/api";
+import { TherapeutResource, PraxisResource, RolleResource } from "../Resources";
 
 const initialTherapeut: TherapeutResource = {
   _id: "",
@@ -10,12 +10,13 @@ const initialTherapeut: TherapeutResource = {
   email: "",
   telefonnummer: "",
   username: "",
-  rolle: "therapeut",
+  rolle: "",
   qualifikation: "",
   praxisId: "",
   stundensatz: 0,
   anfang: "",
   wochenstunden: 0,
+  betreut: [],
   password: ""
 };
 
@@ -31,12 +32,14 @@ const TherapeutenPage: React.FC = () => {
   const [therapeutToDelete, setTherapeutToDelete] = useState<TherapeutResource | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [praxen, setPraxen] = useState<PraxisResource[]>([]);
+  const [rollen, setRollen] = useState<RolleResource[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadTherapeuten();
     loadPraxen();
+    loadRollen();
   }, []);
 
   const loadTherapeuten = async () => {
@@ -52,6 +55,13 @@ const TherapeutenPage: React.FC = () => {
     try {
       const data = await fetchAllePraxen();
       setPraxen(data);
+    } catch { /* ignore */ }
+  };
+
+  const loadRollen = async () => {
+    try {
+      const data = await fetchAlleRollen();
+      setRollen(data);
     } catch { /* ignore */ }
   };
 
@@ -75,7 +85,33 @@ const TherapeutenPage: React.FC = () => {
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
+    if (name === 'rolle') {
+      if (value === 'admin') {
+        setCurrentTherapeut(prev => ({ ...prev, rolle: 'admin', rolleId: undefined }));
+      } else {
+        const rolle = rollen.find(r => r._id === value);
+        if (rolle) {
+          setCurrentTherapeut(prev => ({ ...prev, rolle: rolle.name, rolleId: rolle._id }));
+        }
+      }
+      return;
+    }
     setCurrentTherapeut(prev => ({ ...prev, [name]: name === "stundensatz" || name === "wochenstunden" ? Number(value) : value }));
+  };
+
+  const handleBetreutToggle = (id: string) => {
+    setCurrentTherapeut(prev => {
+      const current = prev.betreut || [];
+      return {
+        ...prev,
+        betreut: current.includes(id) ? current.filter(b => b !== id) : [...current, id],
+      };
+    });
+  };
+
+  const getTherapeutName = (id: string) => {
+    const t = therapeuten.find(th => th._id === id);
+    return t ? `${t.vorname} ${t.nachname}` : id;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -179,11 +215,11 @@ const TherapeutenPage: React.FC = () => {
             return (
               <div key={t._id} className={`ikpd-list-item${isExpanded ? ' expanded' : ''}`}>
                 <div className="ikpd-list-item-row" onClick={() => setExpandedId(isExpanded ? null : t._id)}>
-                  <div className={`ikpd-list-item-avatar${t.rolle === 'admin' ? ' purple' : ''}`}>{initials}</div>
+                  <div className={`ikpd-list-item-avatar${t.rolle.toLowerCase() === 'admin' ? ' purple' : ''}`}>{initials}</div>
                   <div className="ikpd-list-item-content">
                     <div className="ikpd-list-item-primary">
                       <span className="ikpd-list-item-name">{t.vorname} {t.nachname}</span>
-                      <Badge bg={t.rolle === 'admin' ? 'primary' : 'secondary'}>{t.rolle}</Badge>
+                      <Badge bg={t.rolle.toLowerCase() === 'admin' ? 'primary' : 'secondary'}>{t.rolle}</Badge>
                     </div>
                     <div className="ikpd-list-item-secondary">
                       <span className="ikpd-list-item-meta">
@@ -240,6 +276,14 @@ const TherapeutenPage: React.FC = () => {
                       <span className="ikpd-detail-label">Anfang</span>
                       <span className="ikpd-detail-value">{t.anfang?.slice(0, 10) || '–'}</span>
                     </div>
+                    {t.betreut && t.betreut.length > 0 && (
+                      <div className="ikpd-detail-field">
+                        <span className="ikpd-detail-label">Betreut</span>
+                        <span className="ikpd-detail-value">
+                          {t.betreut.map(id => getTherapeutName(id)).join(', ')}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -321,12 +365,14 @@ const TherapeutenPage: React.FC = () => {
                   <Form.Select
                     required
                     name="rolle"
-                    value={currentTherapeut.rolle}
+                    value={currentTherapeut.rolle === 'admin' ? 'admin' : (currentTherapeut.rolleId || '')}
                     onChange={handleChange}
                   >
                     <option value="">Bitte wählen</option>
-                    <option value="therapeut">Therapeut</option>
-                    <option value="admin">Admin</option>
+                    <option value="admin">Administrator</option>
+                    {rollen.map(r => (
+                      <option key={r._id} value={r._id}>{r.name}</option>
+                    ))}
                   </Form.Select>
                   <Form.Control.Feedback type="invalid">Bitte Rolle auswählen.</Form.Control.Feedback>
                 </Form.Group>
@@ -417,6 +463,28 @@ const TherapeutenPage: React.FC = () => {
                       onChange={handleChange}
                     />
                     <Form.Control.Feedback type="invalid">Bitte Passwort eingeben.</Form.Control.Feedback>
+                  </Form.Group>
+                )}
+                {currentTherapeut.rolle !== 'admin' && (
+                  <Form.Group className="mb-3">
+                    <Form.Label>Betreut (Vorarbeiter)</Form.Label>
+                    <div className="ikpd-betreut-list">
+                      {therapeuten
+                        .filter(t => t._id !== currentTherapeut._id)
+                        .map(t => (
+                          <Form.Check
+                            key={t._id}
+                            type="checkbox"
+                            id={`betreut-${t._id}`}
+                            label={`${t.vorname} ${t.nachname}`}
+                            checked={(currentTherapeut.betreut || []).includes(t._id)}
+                            onChange={() => handleBetreutToggle(t._id)}
+                          />
+                        ))}
+                    </div>
+                    <Form.Text className="text-muted">
+                      Dieser Therapeut kann Klienten, Termine und Rechnungen der ausgewählten Therapeuten sehen und bearbeiten.
+                    </Form.Text>
                   </Form.Group>
                 )}
               </Col>

@@ -43,20 +43,38 @@ export interface TherapeutResource {
   nachname: string;
   email: string;
   telefonnummer?: string;
-  rolle: 'admin' | 'therapeut';
+  rolle: string;
+  rolleId?: string;
   qualifikation?: string;
   praxisId: string;
   stundensatz: number;
   anfang?: string;
   wochenstunden?: number;
+  betreut?: string[];
   password?: string;
 }
 
 export interface LoginPayload {
   _id: string;
-  rolle: 'admin' | 'therapeut';
+  rolle: string;
+  rolleId?: string;
   praxisId: string;
-  exp?: number; // Ablaufzeit des Tokens (Unix-Timestamp)
+  betreut?: string[];
+  exp?: number;
+}
+
+export interface RolleResource {
+  _id: string;
+  name: string;
+  beschreibung?: string;
+  berechtigungen: string[];
+  istSystem: boolean;
+}
+
+export interface PermissionGroups {
+  permissions: string[];
+  groups: Record<string, { label: string; permissions: string[] }>;
+  labels: Record<string, string>;
 }
 
 export interface AuftraggeberResource {

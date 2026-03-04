@@ -17,6 +17,7 @@ import AuftraggeberDetailPage from './pages/AuftraggeberDetailPage';
 import ErrorBoundary from './components/ErrorBoundary';
 import TerminStornoPage from './pages/TerminStornoPage';
 import EmailLogPage from './pages/EmailLogPage';
+import RollenPage from './pages/RollenPage';
 import PasswortVergessenPage from './pages/PasswortVergessenPage';
 import PasswortResetPage from './pages/PasswortResetPage';
 import logo from './logo-ikpd.png';
@@ -81,6 +82,11 @@ const IconMail = () => (
     <rect x="2" y="4" width="20" height="16" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
   </svg>
 );
+const IconShield = () => (
+  <svg className="ikpd-sidebar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+  </svg>
+);
 const IconLogout = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
@@ -109,23 +115,22 @@ function useIsMobile() {
   return isMobile;
 }
 
-const navItems = [
+const allNavItems = [
   { path: '/', label: 'Dashboard', icon: IconDashboard, section: 'Übersicht' },
   { path: '/kalender', label: 'Kalender', icon: IconCalendar },
-  { path: '/klienten', label: 'Klienten', icon: IconUsers, section: 'Verwaltung' },
-  { path: '/auftraggeber', label: 'Auftraggeber', icon: IconBriefcase },
-  { path: '/rechnungen', label: 'Rechnungen', icon: IconReceipt },
-  { path: '/therapeuten', label: 'Therapeuten', icon: IconStethoscope, section: 'Praxis' },
-  { path: '/praxis', label: 'Praxis', icon: IconBuilding },
-  { path: '/email-log', label: 'E-Mail-Log', icon: IconMail },
+  { path: '/klienten', label: 'Klienten', icon: IconUsers, section: 'Verwaltung', permission: 'klienten:view' },
+  { path: '/auftraggeber', label: 'Auftraggeber', icon: IconBriefcase, permission: 'auftraggeber:view' },
+  { path: '/rechnungen', label: 'Rechnungen', icon: IconReceipt, permission: 'rechnungen:view' },
+  { path: '/therapeuten', label: 'Therapeuten', icon: IconStethoscope, section: 'Praxis', permission: 'therapeuten:view' },
+  { path: '/praxis', label: 'Praxis', icon: IconBuilding, permission: 'praxis:view' },
+  { path: '/rollen', label: 'Rollen', icon: IconShield, permission: 'rollen:view' },
+  { path: '/email-log', label: 'E-Mail-Log', icon: IconMail, permission: 'email_log:view' },
 ];
 
-/* Bottom bar: show first 4 items as tabs, rest in "More" popup */
-const bottomBarItems = navItems.slice(0, 4);
-const bottomBarMoreItems = navItems.slice(4);
+/* Bottom bar items are computed inside Sidebar based on filtered navItems */
 
 const Sidebar = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasPermission } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -137,8 +142,12 @@ const Sidebar = () => {
     || location.pathname.startsWith('/termin/storno/');
   if (isPublic) return null;
 
-  const rolleLabel = user?.rolle === 'admin' ? 'Administrator' : 'Therapeut';
-  const initials = user?.rolle === 'admin' ? 'AD' : 'TH';
+  const navItems = allNavItems.filter(item => !item.permission || hasPermission(item.permission));
+  const bottomBarItems = navItems.slice(0, 4);
+  const bottomBarMoreItems = navItems.slice(4);
+
+  const rolleLabel = user?.rolle || 'Therapeut';
+  const initials = (user?.rolle || 'TH').substring(0, 2).toUpperCase();
 
   const closeMore = () => setMoreOpen(false);
   const isActive = (path: string) =>
@@ -297,6 +306,7 @@ function AppContent() {
           <Route path="/praxis" element={<RequireAuth><PraxisPage /></RequireAuth>} />
           <Route path="/rechnungen" element={<RequireAuth><RechnungenPage /></RequireAuth>} />
           <Route path="/email-log" element={<RequireAuth><EmailLogPage /></RequireAuth>} />
+          <Route path="/rollen" element={<RequireAuth><RollenPage /></RequireAuth>} />
           <Route path="/profil" element={<RequireAuth><ProfilPage /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
